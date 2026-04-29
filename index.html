@@ -50,7 +50,8 @@
         <div class="card">
             <input type="text" id="tit" placeholder="Titel">
             <select id="categoria">
-                <option value="Vorspeisen">🥗 Vorspeisen</option>
+                <option value="Vorspeisen">🥗 Vorspeisen (Kalt)</option>
+                <option value="Warme Vorspeisen">🥘 Warme Vorspeisen</option>
                 <option value="Hauptspeisen">🍝 Hauptspeisen</option>
                 <option value="Beilagen">🥦 Beilagen</option>
                 <option value="Desserts">🍰 Desserts</option>
@@ -90,6 +91,7 @@
         
         const catEmojis = {
             "Vorspeisen": "🥗",
+            "Warme Vorspeisen": "🥘",
             "Hauptspeisen": "🍝",
             "Beilagen": "🥦",
             "Desserts": "🍰",
@@ -108,7 +110,8 @@
         function mostraRicette(array) {
             const cont = document.getElementById('lista-contenitore');
             cont.innerHTML = "";
-            const cats = ["Vorspeisen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"];
+            // Reihenfolge der Kategorien in der Liste
+            const cats = ["Vorspeisen", "Warme Vorspeisen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"];
             
             cats.forEach(c => {
                 const filtrate = array.filter(r => r.categoria === c);
@@ -117,8 +120,8 @@
                     filtrate.forEach(r => {
                         html += `
                         <div class="swipe-container">
-                            <div class="swipe-actions-left" onclick="preparaModifica('${r.id}')">BEARBEITEN</div>
-                            <div class="swipe-actions-right" onclick="elimina('${r.id}')">LÖSCHEN</div>
+                            <div class="swipe-actions-left" onclick="preparaModifica('${r.id}')">EDIT</div>
+                            <div class="swipe-actions-right" onclick="elimina('${r.id}')">DEL</div>
                             <div class="recipe-card" 
                                  onclick="apriDettaglio('${r.id}')" 
                                  ontouchstart="handleStart(event)" 
@@ -159,7 +162,7 @@
         function apriDettaglio(id) {
             const r = tutteLeRicette.find(x => x.id === id);
             document.getElementById('det-title').innerText = r.title;
-            document.getElementById('det-cat').innerText = catEmojis[r.categoria] + " " + r.categoria;
+            document.getElementById('det-cat').innerText = (catEmojis[r.categoria] || "") + " " + r.categoria;
             document.getElementById('det-ing').innerText = r.ing;
             document.getElementById('detail-view').style.display = 'block';
         }
