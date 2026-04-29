@@ -154,19 +154,23 @@
             formData.append("file", input.files[0]);
             formData.append("language", "ita");
             formData.append("apikey", "K81062382588957");
+            formData.append("isOverlayRequired", false);
 
             try {
                 const response = await fetch("https://api.ocr.space/parse/image", { 
                     method: 'POST', 
                     body: formData,
+                    mode: 'cors',
                     credentials: 'omit'
                 });
                 const result = await response.json();
-                if (result.ParsedResults) {
+                if (result.ParsedResults && result.ParsedResults.length > 0) {
                     document.getElementById('in-ing').value = result.ParsedResults[0].ParsedText;
                     alert("✨ Testo estratto!");
+                } else {
+                    alert("⚠️ Testo non trovato nella foto.");
                 }
-            } catch (e) { alert("Errore OCR"); }
+            } catch (e) { alert("Errore OCR: controlla la connessione."); }
             finally { btn.innerText = "📸 LEGGI FOTO (IA)"; btn.disabled = false; }
         }
 
