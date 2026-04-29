@@ -1,91 +1,46 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ricettario</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Ricette</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <style>
-        body { font-family: -apple-system, sans-serif; background: #f1f2f6; margin: 0; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
-        .btn-add { background: #ff4757; position: fixed; bottom: 30px; right: 20px; width: 60px; height: 60px; border-radius: 30px; font-size: 30px; z-index: 99; }
-        .btn-save { background: #ff4757; margin-top: 10px; }
-        .btn-ocr { background: #5856d6; margin-bottom: 10px; }
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; padding: 20px; z-index: 1000; overflow-y: auto; box-sizing: border-box; }
-        .hidden { display: none; }
-        .recipe-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #ff4757; font-weight: bold; }
-    </style>
 </head>
 <body>
+    <h1>Test Funzionamento</h1>
+    <button onclick="document.getElementById('f').click()" style="padding:20px; background:blue; color:white;">📸 PROVA FOTOCAMERA</button>
+    <input type="file" id="f" accept="image/*" style="display:none" onchange="testOCR(this)">
+    <div id="status"></div>
 
-<div id="home">
-    <h1>🍳 Le mie Ricette</h1>
-    <div id="lista-ricette"></div>
-</div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
+            authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
+            databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ricettario-laboratorio-92621",
+            storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
+            messagingSenderId: "393684653408",
+            appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
+        };
+        firebase.initializeApp(firebaseConfig);
+        
+        async function testOCR(input) {
+            const status = document.getElementById('status');
+            status.innerText = "Caricamento in corso...";
+            const fd = new FormData();
+            fd.append("file", input.files[0]);
+            fd.append("apikey", "K81062382588957");
+            fd.append("language", "ita");
 
-<div id="modal">
-    <h2>Nuova Ricetta</h2>
-    <button class="btn-ocr" onclick="document.getElementById('f').click()">📸 SCATTA FOTO</button>
-    <input type="file" id="f" accept="image/*" style="display:none" onchange="readOCR(this)">
-    <input type="text" id="tit" placeholder="Titolo">
-    <input type="text" id="cat" placeholder="Categoria (es. Pasta)">
-    <textarea id="ing" rows="5" placeholder="Ingredienti"></textarea>
-    <textarea id="pro" rows="8" placeholder="Procedimento"></textarea>
-    <button class="btn-save" onclick="save()">💾 SALVA</button>
-    <button onclick="document.getElementById('modal').style.display='none'" style="background:none; color:gray; margin-top:10px;">Annulla</button>
-</div>
-
-<button class="btn-add" onclick="document.getElementById('modal').style.display='block'">+</button>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
-        authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
-        databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "ricettario-laboratorio-92621",
-        storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
-        messagingSenderId: "393684653408",
-        appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    db.ref('ricette').on('value', s => {
-        const d = s.val();
-        const box = document.getElementById('lista-ricette');
-        box.innerHTML = d ? Object.keys(d).map(k => `<div class="recipe-box">${d[k].title}</div>`).join('') : 'Nessuna ricetta.';
-    });
-
-    async function readOCR(input) {
-        if(!input.files[0]) return;
-        const fd = new FormData();
-        fd.append("file", input.files[0]);
-        fd.append("apikey", "K81062382588957");
-        fd.append("language", "ita");
-        try {
-            const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: fd });
-            const j = await res.json();
-            if(j.ParsedResults) {
-                document.getElementById('ing').value = j.ParsedResults[0].ParsedText;
-                alert("Testo letto!");
+            try {
+                const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: fd });
+                const j = await res.json();
+                status.innerText = "Risultato: " + JSON.stringify(j);
+            } catch(e) {
+                status.innerText = "Errore: " + e.message;
             }
-        } catch(e) { alert("Errore lettura"); }
-    }
-
-    function save() {
-        const r = { title: document.getElementById('tit').value, cat: document.getElementById('cat').value || "Varie", ing: document.getElementById('ing').value, step: document.getElementById('pro').value };
-        if(!r.title) return alert("Metti il titolo!");
-        db.ref('ricette').push(r).then(() => {
-            document.getElementById('modal').style.display='none';
-            alert("Salvata!");
-        });
-    }
-</script>
+        }
+    </script>
 </body>
 </html>
