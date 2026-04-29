@@ -4,46 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Ricettario Smart</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="icon.png">
-
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
     <style>
-        :root { --primary: #ff4757; --bg: #f1f2f6; --card: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; }
-        .container { background: var(--card); padding: 25px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); max-width: 500px; margin: auto; }
-        h2 { color: var(--primary); margin-top: 0; }
-        #status { color: #5856d6; font-weight: bold; margin: 15px 0; font-size: 14px; min-height: 1.2em; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 15px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; font-family: inherit; }
-        button { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        body { font-family: -apple-system, sans-serif; background: #f1f2f6; padding: 20px; text-align: center; }
+        .box { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        #status { color: #5856d6; font-weight: bold; margin: 15px 0; min-height: 1.5em; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
         .btn-photo { background: #5856d6; color: white; margin-bottom: 10px; }
-        .btn-save { background: var(--primary); color: white; }
-        #lista { margin-top: 30px; text-align: left; }
-        .item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); font-weight: bold; }
+        .btn-save { background: #ff4757; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="box">
     <h2>🍳 Nuova Ricetta</h2>
-    <div id="status">Pronto per caricare</div>
+    <div id="status">Seleziona una foto</div>
     
-    <button class="btn-photo" id="btn-foto" onclick="document.getElementById('file-in').click()">📸 LEGGI SCRITTURA A MANO</button>
-    <input type="file" id="file-in" accept="image/*" style="display:none" onchange="elabora(this)">
+    <button class="btn-photo" id="btn-foto" onclick="document.getElementById('file-in').click()">📸 SCATTA O CARICA FOTO</button>
+    <input type="file" id="file-in" accept="image/*" style="display:none" onchange="analizza(this)">
     
     <input type="text" id="tit" placeholder="Titolo della ricetta">
-    <textarea id="ing" rows="8" placeholder="Gli ingredienti appariranno qui..."></textarea>
+    <textarea id="ing" rows="8" placeholder="Il testo apparirà qui..."></textarea>
     
-    <button class="btn-save" onclick="salva()">💾 SALVA RICETTA</button>
+    <button class="btn-save" onclick="salva()">💾 SALVA NEL DATABASE</button>
 </div>
 
-<div id="lista"></div>
-
 <script>
+    // Configurazione Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
         authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
@@ -56,49 +45,53 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    db.ref('ricette').on('value', s => {
-        const d = s.val();
-        document.getElementById('lista').innerHTML = d ? Object.keys(d).map(k => `<div class="item">${d[k].title}</div>`).join('') : '';
-    });
-
-    async function elabora(input) {
+    async function analizza(input) {
         if (!input.files[0]) return;
         const msg = document.getElementById('status');
-        const btn = document.getElementById('btn-foto');
-        
-        msg.innerText = "⏳ Ottimizzazione per scrittura a mano...";
-        btn.disabled = true;
+        const area = document.getElementById('ing');
+        msg.innerText = "⏳ Caricamento foto...";
 
-        const reader = new FileReader();
-        reader.readAsDataURL(input.files[0]);
-        reader.onload = (e) => {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Ridimensionamento per massima velocità
-                let w = img.width;
-                let h = img.height;
-                const max = 1000;
-                if (w > h) { if (w > max) { h *= max / w; w = max; } }
-                else { if (h > max) { w *= max / h; h = max; } }
-                
-                canvas.width = w; canvas.height = h;
-                ctx.drawImage(img, 0, 0, w, h);
-                
-                canvas.toBlob(async (blob) => {
-                    msg.innerText = "🚀 IA sta decifrando la grafia...";
-                    const fd = new FormData();
-                    fd.append("file", blob, "image.jpg");
-                    fd.append("apikey", "K81062382588957");
-                    fd.append("language", "ita");
-                    fd.append("OCREngine", "2"); // Motore ottimizzato per grafia manuale
+        const fd = new FormData();
+        fd.append("file", input.files[0]);
+        fd.append("apikey", "K81062382588957");
+        fd.append("language", "ita");
+        fd.append("isTable", "true"); // Aiuta a leggere meglio le liste ingredienti
+        fd.append("OCREngine", "2");
 
-                    try {
-                        const response = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: fd });
-                        const data = await response.json();
-                        if (data.ParsedResults && data.ParsedResults.length > 0) {
-                            document.getElementById('ing').value = data.ParsedResults[0].ParsedText;
-                            msg.innerText = "✅ Lettura completata!";
+        try {
+            const response = await fetch("https://api.ocr.space/parse/image", {
+                method: "POST",
+                body: fd
+            });
+            
+            const data = await response.json();
+            
+            if (data && data.ParsedResults && data.ParsedResults[0]) {
+                const risultato = data.ParsedResults[0].ParsedText;
+                if (risultato) {
+                    area.value = risultato;
+                    msg.innerText = "✅ Testo inserito correttamente!";
+                } else {
+                    msg.innerText = "⚠️ Nessun testo trovato.";
+                }
+            } else {
+                msg.innerText = "❌ Errore IA: " + (data.ErrorMessage || "Riprova");
+            }
+        } catch (err) {
+            msg.innerText = "❌ Errore di rete. Controlla connessione.";
+            alert("Errore tecnico: " + err.message);
+        }
+    }
+
+    function salva() {
+        const t = document.getElementById('tit').value;
+        const i = document.getElementById('ing').value;
+        if (!t) return alert("Metti un titolo!");
+        db.ref('ricette').push({ title: t, ing: i }).then(() => {
+            alert("Salvata con successo!");
+            location.reload();
+        });
+    }
+</script>
+</body>
+</html>
