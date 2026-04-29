@@ -8,63 +8,25 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ff4757">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #ff4757; --bg: #f1f2f6; --card: #ffffff; --accent: #007aff; --text: #2f3542; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: 0.2s; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background: var(--bg); 
-            margin: 0 auto; 
-            padding: 20px 15px 100px; 
-            color: var(--text);
-            max-width: 600px; 
-            min-height: 100vh;
-        }
-
-        h1 { font-size: 32px; font-weight: 800; margin: 0 0 20px; }
-        #search-bar { width: 100%; padding: 15px; border-radius: 15px; border: none; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-size: 16px; }
-        
+        :root { --primary: #ff4757; --bg: #f1f2f6; --card: #ffffff; --text: #2f3542; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0 auto; padding: 20px 15px 100px; max-width: 600px; }
+        h1 { font-size: 30px; margin-bottom: 20px; }
+        #search-bar { width: 100%; padding: 15px; border-radius: 15px; border: none; margin-bottom: 20px; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .folder { background: var(--card); padding: 25px; border-radius: 25px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.04); cursor: pointer; }
-        .folder:active { transform: scale(0.95); }
-        .folder i { font-size: 40px; display: block; margin-bottom: 10px; font-style: normal; }
-        .folder span { font-weight: 700; }
-
-        .recipe-item { background: white; margin-bottom: 10px; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; border-left: 5px solid var(--primary); cursor: pointer; }
-        .recipe-item:active { background: #f9f9f9; transform: scale(0.98); }
-
-        .back-btn { background: #ddd; padding: 10px 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; cursor: pointer; font-weight: bold; }
-        
-        .fab { 
-            position: fixed; 
-            bottom: 30px; 
-            right: 25px; 
-            background: var(--primary); 
-            color: white; 
-            width: 65px; 
-            height: 65px; 
-            border-radius: 50%; 
-            border: none; 
-            font-size: 30px; 
-            box-shadow: 0 5px 15px rgba(255,71,87,0.4); 
-            cursor: pointer;
-            z-index: 99;
-        }
-
-        @media (min-width: 601px) {
-            .fab { right: calc(50% - 280px); }
-        }
-
+        .folder { background: var(--card); padding: 25px; border-radius: 25px; text-align: center; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.04); }
+        .recipe-item { background: white; margin-bottom: 10px; padding: 20px; border-radius: 15px; border-left: 5px solid var(--primary); font-weight: bold; }
+        .back-btn { background: #ddd; padding: 10px 15px; border-radius: 10px; margin-bottom: 20px; display: inline-block; cursor: pointer; }
+        .fab { position: fixed; bottom: 30px; right: 25px; background: var(--primary); color: white; width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 5px 15px rgba(255,71,87,0.4); z-index: 99; }
         #modal { display:none; position:fixed; top:0; left:50%; transform: translateX(-50%); width:100%; max-width:600px; height:100%; background:white; padding: 40px 20px; z-index:1000; overflow-y:auto; }
-        input, textarea { width:100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: none; background: #f1f2f6; font-size: 16px; font-family: inherit; }
-        .btn-main { width:100%; background:var(--primary); color:white; padding:18px; border-radius:15px; border:none; font-weight:800; font-size:16px; cursor: pointer; }
+        input, textarea { width:100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: none; background: #f1f2f6; font-size: 16px; }
+        .btn-main { width:100%; background:var(--primary); color:white; padding:18px; border-radius:15px; border:none; font-weight:bold; font-size:16px; }
         .hidden { display: none !important; }
         .line { white-space: pre-wrap; line-height: 1.6; background: #fff; padding: 15px; border-radius: 12px; }
     </style>
@@ -86,9 +48,9 @@
 
     <div id="detail" class="hidden">
         <div class="back-btn" id="btn-back-to-list">← Lista</div>
-        <div style="margin-bottom:20px; display: flex; gap: 15px;">
-            <button onclick="openEdit()" style="color:var(--accent); background:none; border:none; font-weight:bold; cursor:pointer;">✏️ Modifica</button>
-            <button onclick="deleteRecipe()" style="color:red; background:none; border:none; font-weight:bold; cursor:pointer;">🗑️ Elimina</button>
+        <div style="margin-bottom:20px;">
+            <button onclick="openEdit()" style="color:blue; background:none; border:none; font-weight:bold;">✏️ Modifica</button>
+            <button onclick="deleteRecipe()" style="color:red; background:none; border:none; font-weight:bold; margin-left:15px;">🗑️ Elimina</button>
         </div>
         <h1 id="det-title"></h1>
         <h3 style="color:var(--primary)">INGREDIENTI</h3>
@@ -98,32 +60,21 @@
     </div>
 
     <div id="modal">
-        <h2 id="modal-label">Nuova Ricetta</h2>
+        <h2>Nuova Ricetta</h2>
         <button id="ocr-btn" class="btn-main" style="background:#5856d6; margin-bottom:15px;" onclick="document.getElementById('ai-input').click()">📸 LEGGI FOTO (IA)</button>
         <input type="file" id="ai-input" accept="image/*" style="display:none" onchange="runOCR(this)">
-        
         <input type="text" id="in-title" placeholder="Titolo">
-        <input type="text" id="in-cat" placeholder="Cartella (es. Pasta, Dolci)">
+        <input type="text" id="in-cat" placeholder="Cartella (Pasta, Dolci...)">
         <textarea id="in-ing" rows="5" placeholder="Ingredienti..."></textarea>
         <textarea id="in-step" rows="7" placeholder="Procedimento..."></textarea>
         <input type="hidden" id="edit-id">
-        
         <button class="btn-main" onclick="save()">💾 SALVA</button>
-        <button onclick="closeM()" style="width:100%; background:none; border:none; margin-top:15px; cursor:pointer; color: gray;">Annulla</button>
+        <button onclick="closeM()" style="width:100%; background:none; border:none; margin-top:15px; color:gray;">Annulla</button>
     </div>
 
     <button class="fab" onclick="openM()">+</button>
 
     <script>
-        // Registrazione Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Error:', err));
-            });
-        }
-
-        const emojiMap = {"pane": "🍞", "dolci": "🍰", "pasta": "🍝", "pizza": "🍕", "carne": "🥩", "pesce": "🐟", "verdura": "🥗", "varie": "📂"};
-
         const firebaseConfig = {
             apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
             authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
@@ -154,23 +105,20 @@
             formData.append("file", input.files[0]);
             formData.append("language", "ita");
             formData.append("apikey", "K81062382588957");
-            formData.append("isOverlayRequired", false);
 
             try {
                 const response = await fetch("https://api.ocr.space/parse/image", { 
                     method: 'POST', 
-                    body: formData,
-                    mode: 'cors',
-                    credentials: 'omit'
+                    body: formData
                 });
                 const result = await response.json();
-                if (result.ParsedResults && result.ParsedResults.length > 0) {
+                if (result.ParsedResults) {
                     document.getElementById('in-ing').value = result.ParsedResults[0].ParsedText;
-                    alert("✨ Testo estratto!");
+                    alert("✨ Testo letto!");
                 } else {
-                    alert("⚠️ Testo non trovato nella foto.");
+                    alert("Errore: Foto non chiara.");
                 }
-            } catch (e) { alert("Errore OCR: controlla la connessione."); }
+            } catch (e) { alert("Errore di connessione OCR"); }
             finally { btn.innerText = "📸 LEGGI FOTO (IA)"; btn.disabled = false; }
         }
 
@@ -180,11 +128,7 @@
             document.getElementById('detail').classList.add('hidden');
             const grid = document.getElementById('folder-grid');
             const cats = [...new Set(recipes.map(r => r.cat || "Varie"))];
-            grid.innerHTML = cats.map(c => {
-                let em = "📂";
-                for(let k in emojiMap) if(c.toLowerCase().includes(k)) em = emojiMap[k];
-                return `<div class="folder" onclick="showCat('${c}')"><i>${em}</i><span>${c}</span></div>`;
-            }).join('');
+            grid.innerHTML = cats.map(c => `<div class="folder" onclick="showCat('${c}')">📂<br>${c}</div>`).join('');
         }
 
         function showCat(c) {
@@ -192,7 +136,7 @@
             document.getElementById('list').classList.remove('hidden');
             document.getElementById('cat-title').innerText = c;
             const filtered = recipes.filter(r => r.cat === c);
-            document.getElementById('recipe-items').innerHTML = filtered.map(r => `<div class="recipe-item" onclick="showDet('${r.id}')"><b>${r.title}</b><span>→</span></div>`).join('');
+            document.getElementById('recipe-items').innerHTML = filtered.map(r => `<div class="recipe-item" onclick="showDet('${r.id}')">${r.title}</div>`).join('');
         }
 
         function showDet(id) {
@@ -211,12 +155,10 @@
             document.getElementById('in-cat').value = "";
             document.getElementById('in-ing').value = "";
             document.getElementById('in-step').value = "";
-            document.getElementById('modal-label').innerText = "Nuova Ricetta";
             document.getElementById('modal').style.display='block'; 
         }
 
         function openEdit() {
-            document.getElementById('modal-label').innerText = "Modifica Ricetta";
             document.getElementById('edit-id').value = currentRecipe.id;
             document.getElementById('in-title').value = currentRecipe.title;
             document.getElementById('in-cat').value = currentRecipe.cat;
@@ -227,7 +169,12 @@
 
         function save() {
             const id = document.getElementById('edit-id').value;
-            const data = { title: document.getElementById('in-title').value, cat: document.getElementById('in-cat').value || "Varie", ing: document.getElementById('in-ing').value, step: document.getElementById('in-step').value };
+            const data = { 
+                title: document.getElementById('in-title').value, 
+                cat: document.getElementById('in-cat').value || "Varie", 
+                ing: document.getElementById('in-ing').value, 
+                step: document.getElementById('in-step').value 
+            };
             if(!data.title) return alert("Metti un titolo!");
             const ref = id ? db.ref('ricette/'+id) : db.ref('ricette').push();
             ref.set(data).then(() => { closeM(); alert("Salvato!"); });
@@ -243,7 +190,7 @@
                 document.getElementById('folder-grid').classList.add('hidden');
                 resDiv.classList.remove('hidden');
                 const filtered = recipes.filter(r => r.title.toLowerCase().includes(q));
-                resDiv.innerHTML = filtered.map(r => `<div class="recipe-item" onclick="showDet('${r.id}')"><b>${r.title}</b><span>→</span></div>`).join('');
+                resDiv.innerHTML = filtered.map(r => `<div class="recipe-item" onclick="showDet('${r.id}')">${r.title}</div>`).join('');
             } else {
                 document.getElementById('folder-grid').classList.remove('hidden');
                 resDiv.classList.add('hidden');
