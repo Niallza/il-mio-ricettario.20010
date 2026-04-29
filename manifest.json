@@ -1,0 +1,16 @@
+{
+  "name": "Ricettario Smart",
+  "short_name": "Ricette",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f1f2f6",
+  "theme_color": "#ff4757",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
