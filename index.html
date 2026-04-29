@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mein Rezeptbuch Pro</title>
+    <title>Ricettario Smart Pro</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
@@ -13,6 +13,7 @@
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
         h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; color: #1c1c1e; }
         
+        /* Barra di ricerca */
         .search-box { 
             width: 100%; padding: 12px 15px; border-radius: 12px; border: none; 
             background: #e5e5ea; margin-bottom: 20px; font-size: 16px; box-sizing: border-box;
@@ -24,10 +25,10 @@
             border: 1px solid #d1d1d6; font-size: 16px; box-sizing: border-box; background: #fff;
         }
 
-        .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; }
         .btn-tool { 
             background: #f2f2f7; color: #007aff; border: none; padding: 10px; 
-            border-radius: 10px; font-size: 13px; font-weight: 600; flex: 1; min-width: 100px;
+            border-radius: 10px; font-size: 13px; font-weight: 600; flex: 1;
         }
 
         .btn-save { 
@@ -46,33 +47,33 @@
 </head>
 <body>
 
-    <h1>👨‍🍳 Rezeptbuch</h1>
+    <h1>👨‍🍳 Ricettario</h1>
 
-    <input type="text" id="search" class="search-box" placeholder="🔍 Rezept suchen..." onkeyup="filtra()">
+    <input type="text" id="search" class="search-box" placeholder="🔍 Cerca ricetta..." onkeyup="filtra()">
 
     <div class="card">
-        <label>Titel</label>
-        <input type="text" id="tit" placeholder="z.B. Apfelstrudel">
+        <label>Titolo</label>
+        <input type="text" id="tit" placeholder="Es: Risotto ai funghi">
 
-        <label>Kategorie</label>
+        <label>Categoria</label>
         <select id="categoria">
-            <option value="Vorspeisen">Vorspeisen (Antipasti)</option>
-            <option value="Hauptspeisen">Hauptspeisen (Primi/Secondi)</option>
-            <option value="Beilagen">Beilagen (Contorni)</option>
-            <option value="Desserts">Desserts (Dolci)</option>
-            <option value="Sonstiges" selected>Sonstiges (Varie)</option>
+            <option value="Antipasti">Antipasti</option>
+            <option value="Primi">Primi</option>
+            <option value="Secondi">Secondi</option>
+            <option value="Contorni">Contorni</option>
+            <option value="Dolci">Dolci</option>
+            <option value="Varie" selected>Varie</option>
         </select>
 
-        <label>Zutaten & Zubereitung</label>
-        <textarea id="ing" rows="6" placeholder="Text scannen oder schreiben..."></textarea>
+        <label>Ingredienti</label>
+        <textarea id="ing" rows="6" placeholder="Usa il mirino per scansionare..."></textarea>
         
         <div class="toolbar">
-            <button class="btn-tool" onclick="pulisci()">✨ Liste ordnen</button>
-            <button class="btn-tool" onclick="svuota()">🗑️ Löschen</button>
-            <button class="btn-tool" style="background:#e3f2fd;" onclick="checkGrammar()">📖 Grammatik-Check</button>
+            <button class="btn-tool" onclick="pulisci()">✨ Sistema Lista</button>
+            <button class="btn-tool" onclick="svuota()">🗑️ Cancella</button>
         </div>
 
-        <button class="btn-save" onclick="salva()">💾 REZEPT SPEICHERN</button>
+        <button class="btn-save" onclick="salva()">💾 SALVA RICETTA</button>
     </div>
 
     <div id="lista"></div>
@@ -91,6 +92,7 @@
         const db = firebase.database();
         let tutteLeRicette = [];
 
+        // Caricamento e Visualizzazione
         db.ref('ricette').on('value', s => {
             const data = s.val();
             tutteLeRicette = data ? Object.keys(data).map(id => ({...data[id], id})) : [];
@@ -107,22 +109,16 @@
                             <span class="recipe-name">${r.title}</span>
                             <span style="color:#c7c7cc">›</span>
                         </div>
-                        <span class="recipe-cat">${r.categoria || 'Sonstiges'}</span>
+                        <span class="recipe-cat">${r.categoria || 'Varie'}</span>
                     </div>`;
             });
         }
 
+        // Funzione di Ricerca
         function filtra() {
             const query = document.getElementById('search').value.toLowerCase();
             const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(query));
             mostraRicette(filtrate);
-        }
-
-        function checkGrammar() {
-            let t = document.getElementById('ing').value;
-            if(!t) return;
-            alert("Tipp: Achte auf die Großschreibung! (Ricorda: in tedesco i sostantivi hanno sempre la lettera MAIUSCOLA).");
-            // Qui in futuro potremmo collegare un'API di correzione vera e propria
         }
 
         function pulisci() {
@@ -132,17 +128,17 @@
             document.getElementById('ing').value = righe.map(r => "• " + r.charAt(0).toUpperCase() + r.slice(1)).join('\n');
         }
 
-        function svuota() { if(confirm("Löschen?")) document.getElementById('ing').value = ""; }
+        function svuota() { if(confirm("Vuoi cancellare?")) document.getElementById('ing').value = ""; }
 
         function salva() {
             const t = document.getElementById('tit').value;
             const c = document.getElementById('categoria').value;
             const i = document.getElementById('ing').value;
-            if(!t) return alert("Bitte Titel eingeben!");
+            if(!t) return alert("Metti un titolo!");
             db.ref('ricette').push({ title: t, categoria: c, ing: i }).then(() => {
                 document.getElementById('tit').value = "";
                 document.getElementById('ing').value = "";
-                alert("✅ Gespeichert!");
+                alert("✅ Salvata!");
             });
         }
     </script>
