@@ -3,95 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ricettario Smart</title>
+    <title>Ricettario Smart Pro</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f1f2f6; padding: 20px; text-align: center; }
-        .box { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        #status { color: #5856d6; font-weight: bold; margin: 15px 0; min-height: 1.5em; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-photo { background: #5856d6; color: white; margin-bottom: 10px; }
-        .btn-save { background: #ff4757; color: white; }
+        :root { --primary: #007aff; --success: #34c759; --bg: #f2f2f7; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; }
+        
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; color: #1c1c1e; }
+        
+        /* Barra di ricerca */
+        .search-box { 
+            width: 100%; padding: 12px 15px; border-radius: 12px; border: none; 
+            background: #e5e5ea; margin-bottom: 20px; font-size: 16px; box-sizing: border-box;
+        }
+
+        label { font-size: 11px; font-weight: bold; color: #8e8e93; text-transform: uppercase; margin-left: 5px; }
+        input, textarea, select { 
+            width: 100%; padding: 15px; margin: 5px 0 15px; border-radius: 12px; 
+            border: 1px solid #d1d1d6; font-size: 16px; box-sizing: border-box; background: #fff;
+        }
+
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-tool { 
+            background: #f2f2f7; color: #007aff; border: none; padding: 10px; 
+            border-radius: 10px; font-size: 13px; font-weight: 600; flex: 1;
+        }
+
+        .btn-save { 
+            background: var(--success); color: white; border: none; padding: 18px;
+            border-radius: 16px; width: 100%; font-weight: bold; font-size: 18px;
+        }
+
+        .recipe-card { 
+            background: white; padding: 18px; border-radius: 16px; margin-top: 10px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column;
+        }
+        .recipe-header { display: flex; justify-content: space-between; align-items: center; }
+        .recipe-name { font-weight: 700; font-size: 17px; }
+        .recipe-cat { font-size: 12px; color: #007aff; font-weight: 600; margin-top: 4px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>🍳 Nuova Ricetta</h2>
-    <div id="status">Seleziona una foto</div>
-    
-    <button class="btn-photo" id="btn-foto" onclick="document.getElementById('file-in').click()">📸 SCATTA O CARICA FOTO</button>
-    <input type="file" id="file-in" accept="image/*" style="display:none" onchange="analizza(this)">
-    
-    <input type="text" id="tit" placeholder="Titolo della ricetta">
-    <textarea id="ing" rows="8" placeholder="Il testo apparirà qui..."></textarea>
-    
-    <button class="btn-save" onclick="salva()">💾 SALVA NEL DATABASE</button>
-</div>
+    <h1>👨‍🍳 Ricettario</h1>
 
-<script>
-    // Configurazione Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
-        authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
-        databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "ricettario-laboratorio-92621",
-        storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
-        messagingSenderId: "393684653408",
-        appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    <input type="text" id="search" class="search-box" placeholder="🔍 Cerca ricetta..." onkeyup="filtra()">
 
-    async function analizza(input) {
-        if (!input.files[0]) return;
-        const msg = document.getElementById('status');
-        const area = document.getElementById('ing');
-        msg.innerText = "⏳ Caricamento foto...";
+    <div class="card">
+        <label>Titolo</label>
+        <input type="text" id="tit" placeholder="Es: Risotto ai funghi">
 
-        const fd = new FormData();
-        fd.append("file", input.files[0]);
-        fd.append("apikey", "K81062382588957");
-        fd.append("language", "ita");
-        fd.append("isTable", "true"); // Aiuta a leggere meglio le liste ingredienti
-        fd.append("OCREngine", "2");
+        <label>Categoria</label>
+        <select id="categoria">
+            <option value="Antipasti">Antipasti</option>
+            <option value="Primi">Primi</option>
+            <option value="Secondi">Secondi</option>
+            <option value="Contorni">Contorni</option>
+            <option value="Dolci">Dolci</option>
+            <option value="Varie" selected>Varie</option>
+        </select>
 
-        try {
-            const response = await fetch("https://api.ocr.space/parse/image", {
-                method: "POST",
-                body: fd
-            });
-            
-            const data = await response.json();
-            
-            if (data && data.ParsedResults && data.ParsedResults[0]) {
-                const risultato = data.ParsedResults[0].ParsedText;
-                if (risultato) {
-                    area.value = risultato;
-                    msg.innerText = "✅ Testo inserito correttamente!";
-                } else {
-                    msg.innerText = "⚠️ Nessun testo trovato.";
-                }
-            } else {
-                msg.innerText = "❌ Errore IA: " + (data.ErrorMessage || "Riprova");
-            }
-        } catch (err) {
-            msg.innerText = "❌ Errore di rete. Controlla connessione.";
-            alert("Errore tecnico: " + err.message);
-        }
-    }
+        <label>Ingredienti</label>
+        <textarea id="ing" rows="6" placeholder="Usa il mirino per scansionare..."></textarea>
+        
+        <div class="toolbar">
+            <button class="btn-tool" onclick="pulisci()">✨ Sistema Lista</button>
+            <button class="btn-tool" onclick="svuota()">🗑️ Cancella</button>
+        </div>
 
-    function salva() {
-        const t = document.getElementById('tit').value;
-        const i = document.getElementById('ing').value;
-        if (!t) return alert("Metti un titolo!");
-        db.ref('ricette').push({ title: t, ing: i }).then(() => {
-            alert("Salvata con successo!");
-            location.reload();
+        <button class="btn-save" onclick="salva()">💾 SALVA RICETTA</button>
+    </div>
+
+    <div id="lista"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
+            authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
+            databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ricettario-laboratorio-92621",
+            storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
+            messagingSenderId: "393684653408",
+            appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let tutteLeRicette = [];
+
+        // Caricamento e Visualizzazione
+        db.ref('ricette').on('value', s => {
+            const data = s.val();
+            tutteLeRicette = data ? Object.keys(data).map(id => ({...data[id], id})) : [];
+            mostraRicette(tutteLeRicette.reverse());
         });
-    }
-</script>
+
+        function mostraRicette(array) {
+            const list = document.getElementById('lista');
+            list.innerHTML = "";
+            array.forEach(r => {
+                list.innerHTML += `
+                    <div class="recipe-card">
+                        <div class="recipe-header">
+                            <span class="recipe-name">${r.title}</span>
+                            <span style="color:#c7c7cc">›</span>
+                        </div>
+                        <span class="recipe-cat">${r.categoria || 'Varie'}</span>
+                    </div>`;
+            });
+        }
+
+        // Funzione di Ricerca
+        function filtra() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(query));
+            mostraRicette(filtrate);
+        }
+
+        function pulisci() {
+            let t = document.getElementById('ing').value;
+            if(!t) return;
+            let righe = t.split(/[\n,]+/).map(r => r.trim()).filter(r => r.length > 0);
+            document.getElementById('ing').value = righe.map(r => "• " + r.charAt(0).toUpperCase() + r.slice(1)).join('\n');
+        }
+
+        function svuota() { if(confirm("Vuoi cancellare?")) document.getElementById('ing').value = ""; }
+
+        function salva() {
+            const t = document.getElementById('tit').value;
+            const c = document.getElementById('categoria').value;
+            const i = document.getElementById('ing').value;
+            if(!t) return alert("Metti un titolo!");
+            db.ref('ricette').push({ title: t, categoria: c, ing: i }).then(() => {
+                document.getElementById('tit').value = "";
+                document.getElementById('ing').value = "";
+                alert("✅ Salvata!");
+            });
+        }
+    </script>
 </body>
 </html>
