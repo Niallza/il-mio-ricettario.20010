@@ -3,41 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ricettario Smart</title>
+    <title>Ricettario Rapido</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; text-align: center; }
-        .container { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        h2 { color: #ff4757; margin-top: 0; }
-        #status { color: #5856d6; font-weight: bold; margin: 15px 0; min-height: 20px; font-size: 14px; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 15px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-photo { background: #5856d6; color: white; margin-bottom: 10px; }
+        body { font-family: -apple-system, sans-serif; background: #f0f0f7; padding: 20px; text-align: center; }
+        .app-card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        h2 { color: #ff4757; }
+        #msg { color: #5856d6; font-weight: bold; margin: 10px 0; font-size: 14px; min-height: 1.2em; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-camera { background: #5856d6; color: white; margin-bottom: 10px; }
         .btn-save { background: #ff4757; color: white; }
-        #preview { max-width: 100%; border-radius: 15px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🍳 Nuovo Piatto</h2>
-    <div id="status">Pronto per scattare</div>
+<div class="app-card">
+    <h2>🍳 Scansiona Ricetta</h2>
+    <div id="msg">In attesa di foto...</div>
     
-    <button class="btn-photo" id="btn-foto" onclick="document.getElementById('file-in').click()">📸 LEGGI TESTO DA FOTO</button>
-    <input type="file" id="file-in" accept="image/*" style="display:none" onchange="elaboraImmagine(this)">
+    <button class="btn-camera" id="btn-foto" onclick="document.getElementById('file-in').click()">📸 SCATTA O CARICA FOTO</button>
+    <input type="file" id="file-in" accept="image/*" style="display:none" onchange="analizzaFoto(this)">
     
-    <canvas id="hidden-canvas" style="display:none;"></canvas>
-    <img id="preview">
-
-    <input type="text" id="tit" placeholder="Titolo ricetta">
-    <textarea id="ing" rows="6" placeholder="Gli ingredienti appariranno qui dopo la foto..."></textarea>
+    <input type="text" id="t" placeholder="Titolo ricetta">
+    <textarea id="i" rows="7" placeholder="Gli ingredienti appariranno qui..."></textarea>
     
     <button class="btn-save" onclick="salva()">💾 SALVA RICETTA</button>
 </div>
 
 <script>
-    // Configurazione Firebase
+    // Inizializzazione Firebase istantanea
     const firebaseConfig = {
         apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
         authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
@@ -50,13 +46,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    async function elaboraImmagine(input) {
+    async function analizzaFoto(input) {
         if (!input.files[0]) return;
-        const status = document.getElementById('status');
+        const msg = document.getElementById('msg');
         const btn = document.getElementById('btn-foto');
-        const ingField = document.getElementById('ing');
         
-        status.innerText = "⏳ Ottimizzazione immagine...";
+        msg.innerText = "⏳ Ottimizzazione per iPhone...";
         btn.disabled = true;
 
         const reader = new FileReader();
@@ -65,55 +60,53 @@
             const img = new Image();
             img.src = e.target.result;
             img.onload = () => {
-                const canvas = document.getElementById('hidden-canvas');
+                const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Rimpiccioliamo la foto a max 800px per lato (velocissimo da inviare)
-                let width = img.width;
-                let height = img.height;
-                const max = 800;
-                if (width > height) { if (width > max) { height *= max / width; width = max; } }
-                else { if (height > max) { width *= max / height; height = max; } }
+                // DIMENSIONE ULTRA-LIGHT: 600px (molto veloce da inviare)
+                let w = img.width;
+                let h = img.height;
+                const scale = Math.min(600 / w, 600 / h);
+                canvas.width = w * scale;
+                canvas.height = h * scale;
                 
-                canvas.width = width;
-                canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
-                // Trasformiamo in JPG leggero
                 canvas.toBlob(async (blob) => {
-                    status.innerText = "🚀 IA sta leggendo (attendere)...";
+                    msg.innerText = "🚀 IA sta leggendo... (quasi fatto)";
                     
                     const fd = new FormData();
-                    fd.append("file", blob, "image.jpg");
+                    fd.append("file", blob, "r.jpg");
                     fd.append("apikey", "K81062382588957");
                     fd.append("language", "ita");
 
                     try {
+                        // Aumentiamo il tempo di attesa con un fetch semplice
                         const response = await fetch("https://api.ocr.space/parse/image", {
                             method: "POST",
                             body: fd
                         });
-                        const data = await response.json();
+                        const res = await response.json();
                         
-                        if (data.ParsedResults && data.ParsedResults.length > 0) {
-                            ingField.value = data.ParsedResults[0].ParsedText;
-                            status.innerText = "✅ Testo letto con successo!";
+                        if (res.ParsedResults && res.ParsedResults.length > 0) {
+                            document.getElementById('i').value = res.ParsedResults[0].ParsedText;
+                            msg.innerText = "✅ Testo estratto!";
                         } else {
-                            status.innerText = "❌ Errore: Foto non chiara.";
+                            msg.innerText = "⚠️ Riprova: testo non trovato.";
                         }
                     } catch (err) {
-                        status.innerText = "❌ Errore di rete. Riprova con meno luce.";
+                        msg.innerText = "❌ Connessione lenta. Riprova tra un attimo.";
                     } finally {
                         btn.disabled = false;
                     }
-                }, 'image/jpeg', 0.6); // Qualità 60% per essere super leggero
+                }, 'image/jpeg', 0.5); // Qualità 50% (massima velocità)
             };
         };
     }
 
     function salva() {
-        const t = document.getElementById('tit').value;
-        const i = document.getElementById('ing').value;
+        const t = document.getElementById('t').value;
+        const i = document.getElementById('i').value;
         if (!t) return alert("Inserisci un titolo!");
         db.ref('ricette').push({ title: t, ing: i }).then(() => {
             alert("✅ Salvata!");
