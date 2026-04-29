@@ -10,70 +10,109 @@
         :root { --primary: #007aff; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; overflow-x: hidden; }
         
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; color: #1c1c1e; }
-        
-        .search-box { width: 100%; padding: 12px 15px; border-radius: 12px; border: none; background: #e5e5ea; margin-bottom: 20px; font-size: 16px; box-sizing: border-box; }
-        input, textarea, select { width: 100%; padding: 15px; margin: 5px 0 15px; border-radius: 12px; border: 1px solid #d1d1d6; font-size: 16px; box-sizing: border-box; -webkit-appearance: none; }
-        
-        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 16px; width: 100%; font-weight: bold; font-size: 18px; }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-tool { background: #f2f2f7; color: #007aff; border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; flex: 1; }
+        h1 { font-size: 26px; font-weight: 800; margin: 10px 0 20px; color: #1c1c1e; text-align: center; text-transform: uppercase; }
 
-        .category-section { margin-top: 20px; }
-        .category-title { font-size: 15px; font-weight: bold; color: #1c1c1e; margin: 15px 0 8px 5px; display: flex; align-items: center; gap: 8px; }
-
-        .swipe-container { position: relative; overflow: hidden; border-radius: 16px; margin-bottom: 8px; background: #ddd; touch-action: pan-y; }
-        
-        .swipe-actions-left, .swipe-actions-right {
-            position: absolute; top: 0; bottom: 0; width: 80px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px;
+        /* Griglia Cartelle Style iPhone */
+        .folder-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .folder { 
+            height: 140px; border-radius: 24px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; color: white; font-weight: bold; 
+            font-size: 16px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;
         }
-        .swipe-actions-left { left: 0; background: var(--primary); } 
-        .swipe-actions-right { right: 0; background: var(--danger); } 
+        .folder:active { transform: scale(0.95); }
+        .folder-icon { font-size: 40px; margin-bottom: 10px; }
+        .folder-count { font-size: 12px; opacity: 0.8; margin-top: 5px; }
 
-        .recipe-card { 
-            position: relative; background: white; padding: 18px; display: flex; justify-content: space-between; 
-            align-items: center; transition: transform 0.3s ease; z-index: 2; cursor: pointer;
+        /* Colori Cartelle */
+        .f-kalt { background: #2c5282; }
+        .f-warm { background: #d69e2e; }
+        .f-haupt { background: #9b2c2c; }
+        .f-beil { background: #2f855a; }
+        .f-dessert { background: #805ad5; }
+        .f-andere { background: #4a5568; }
+
+        /* Vista Lista Ricette (sotto-cartella) */
+        #folder-view { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: var(--bg); z-index: 200; padding: 40px 15px; box-sizing: border-box; overflow-y: auto;
         }
-        .recipe-name { font-weight: 600; font-size: 17px; color: #1c1c1e; }
+        .recipe-item { 
+            background: white; padding: 18px; border-radius: 16px; margin-bottom: 10px; 
+            display: flex; justify-content: space-between; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
 
-        #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; padding: 40px 20px; box-sizing: border-box; overflow-y: auto; }
-        .btn-back { background: #f2f2f7; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
+        /* Vista Dettaglio Ricetta */
+        #detail-view { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: white; z-index: 300; padding: 40px 20px; box-sizing: border-box; overflow-y: auto;
+        }
+        .section-title { font-size: 14px; color: var(--primary); font-weight: bold; text-transform: uppercase; margin-top: 25px; display: block; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .content-text { white-space: pre-wrap; line-height: 1.6; font-size: 18px; margin-top: 10px; display: block; }
+
+        /* Floating Button (X) */
+        .fab { position: fixed; bottom: 30px; right: 20px; width: 60px; height: 60px; background: var(--danger); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; z-index: 100; box-shadow: 0 5px 15px rgba(255,59,48,0.4); }
+
+        /* Form Inserimento */
+        #form-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 400; padding: 40px 20px; box-sizing: border-box; overflow-y: auto; }
+        input, textarea, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; }
+        .btn-close { background: #e5e5ea; border: none; padding: 10px; border-radius: 10px; width: 100%; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="main-content">
-        <h1>👨‍🍳 Rezeptbuch</h1>
-        <input type="text" id="search" class="search-box" placeholder="🔍 Suchen..." onkeyup="filtra()">
-
-        <div class="card">
-            <input type="text" id="tit" placeholder="Titel">
-            <select id="categoria">
-                <option value="Vorspeisen">🥗 Vorspeisen (Kalt)</option>
-                <option value="Warme Vorspeisen">🥘 Warme Vorspeisen</option>
-                <option value="Hauptspeisen">🍝 Hauptspeisen</option>
-                <option value="Beilagen">🥦 Beilagen</option>
-                <option value="Desserts">🍰 Desserts</option>
-                <option value="Sonstiges" selected>📦 Sonstiges</option>
-            </select>
-            <textarea id="ing" rows="4" placeholder="Zutaten scannen..."></textarea>
-            <div class="toolbar">
-                <button class="btn-tool" onclick="pulisci()">✨ Liste ordnen</button>
-                <button class="btn-tool" onclick="svuota()">🗑️ Leeren</button>
+        <h1>LE MIE RICETTE</h1>
+        <div class="folder-grid">
+            <div class="folder f-kalt" onclick="apriCartella('Vorspeisen')">
+                <span class="folder-icon">🥗</span><span>KALT</span><span class="folder-count" id="count-Vorspeisen">0</span>
             </div>
-            <button class="btn-save" id="save-btn" onclick="salva()">💾 SPEICHERN</button>
+            <div class="folder f-warm" onclick="apriCartella('Warme Vorspeisen')">
+                <span class="folder-icon">🥘</span><span>WARM</span><span class="folder-count" id="count-Warme Vorspeisen">0</span>
+            </div>
+            <div class="folder f-haupt" onclick="apriCartella('Hauptspeisen')">
+                <span class="folder-icon">🍝</span><span>HAUPT</span><span class="folder-count" id="count-Hauptspeisen">0</span>
+            </div>
+            <div class="folder f-beil" onclick="apriCartella('Beilagen')">
+                <span class="folder-icon">🥦</span><span>BEILAGEN</span><span class="folder-count" id="count-Beilagen">0</span>
+            </div>
+            <div class="folder f-dessert" onclick="apriCartella('Desserts')">
+                <span class="folder-icon">🍰</span><span>DESSERT</span><span class="folder-count" id="count-Desserts">0</span>
+            </div>
+            <div class="folder f-andere" onclick="apriCartella('Sonstiges')">
+                <span class="folder-icon">📦</span><span>ANDERE</span><span class="folder-count" id="count-Sonstiges">0</span>
+            </div>
         </div>
+    </div>
 
-        <div id="lista-contenitore"></div>
+    <div class="fab" onclick="document.getElementById('form-view').style.display='block'">+</div>
+
+    <div id="folder-view">
+        <button class="btn-close" onclick="document.getElementById('folder-view').style.display='none'">← Indietro</button>
+        <h2 id="folder-title" style="text-align:center"></h2>
+        <div id="lista-ricette-cartella"></div>
     </div>
 
     <div id="detail-view">
-        <button class="btn-back" onclick="chiudiDettaglio()">← Zurück</button>
-        <h2 id="det-title" style="margin-top:0;"></h2>
-        <p id="det-cat" style="color:var(--primary); font-weight:bold; font-size:14px;"></p>
-        <hr border="0" style="height:1px; background:#eee;">
-        <div id="det-ing" style="white-space: pre-wrap; line-height: 1.6; font-size: 18px;"></div>
+        <button class="btn-close" onclick="document.getElementById('detail-view').style.display='none'">← Indietro</button>
+        <h2 id="det-title" style="margin-bottom:5px"></h2>
+        <span class="section-title">Ingredienti & Passaggi</span>
+        <span id="det-ing" class="content-text"></span>
+    </div>
+
+    <div id="form-view">
+        <button class="btn-close" onclick="document.getElementById('form-view').style.display='none'">Annulla</button>
+        <input type="text" id="tit" placeholder="Titolo Ricetta">
+        <select id="categoria">
+            <option value="Vorspeisen">🥗 Kalt</option>
+            <option value="Warme Vorspeisen">🥘 Warm</option>
+            <option value="Hauptspeisen">🍝 Haupt</option>
+            <option value="Beilagen">🥦 Beilagen</option>
+            <option value="Desserts">🍰 Dessert</option>
+            <option value="Sonstiges">📦 Andere</option>
+        </select>
+        <textarea id="ing" rows="10" placeholder="Scansiona ingredienti e passaggi..."></textarea>
+        <button class="btn-save" onclick="salva()">💾 SALVA</button>
     </div>
 
     <script>
@@ -88,129 +127,58 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        
-        const catEmojis = {
-            "Vorspeisen": "🥗",
-            "Warme Vorspeisen": "🥘",
-            "Hauptspeisen": "🍝",
-            "Beilagen": "🥦",
-            "Desserts": "🍰",
-            "Sonstiges": "📦"
-        };
-
         let tutteLeRicette = [];
-        let editId = null;
 
         db.ref('ricette').on('value', s => {
             const data = s.val();
             tutteLeRicette = data ? Object.keys(data).map(id => ({...data[id], id})) : [];
-            mostraRicette(tutteLeRicette);
+            aggiornaContatori();
         });
 
-        function mostraRicette(array) {
-            const cont = document.getElementById('lista-contenitore');
-            cont.innerHTML = "";
-            // Reihenfolge der Kategorien in der Liste
+        function aggiornaContatori() {
             const cats = ["Vorspeisen", "Warme Vorspeisen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"];
-            
             cats.forEach(c => {
-                const filtrate = array.filter(r => r.categoria === c);
-                if(filtrate.length > 0) {
-                    let html = `<div class="category-section"><div class="category-title">${catEmojis[c]} ${c}</div>`;
-                    filtrate.forEach(r => {
-                        html += `
-                        <div class="swipe-container">
-                            <div class="swipe-actions-left" onclick="preparaModifica('${r.id}')">EDIT</div>
-                            <div class="swipe-actions-right" onclick="elimina('${r.id}')">DEL</div>
-                            <div class="recipe-card" 
-                                 onclick="apriDettaglio('${r.id}')" 
-                                 ontouchstart="handleStart(event)" 
-                                 ontouchmove="handleMove(event)" 
-                                 ontouchend="handleEnd(event)">
-                                <span class="recipe-name">${r.title}</span>
-                                <span style="color:#c7c7cc">›</span>
-                            </div>
-                        </div>`;
-                    });
-                    html += `</div>`;
-                    cont.innerHTML += html;
-                }
+                const num = tutteLeRicette.filter(r => r.categoria === c).length;
+                document.getElementById('count-' + c).innerText = num + (num === 1 ? " Ricetta" : " Ricette");
             });
         }
 
-        let startX = 0;
-        let currentX = 0;
+        function apriCartella(cat) {
+            document.getElementById('folder-title').innerText = cat.toUpperCase();
+            const lista = document.getElementById('lista-ricette-cartella');
+            lista.innerHTML = "";
+            
+            // Filtra e ordina in ALFABETICO
+            const filtrate = tutteLeRicette
+                .filter(r => r.categoria === cat)
+                .sort((a, b) => a.title.localeCompare(b.title));
 
-        function handleStart(e) { startX = e.touches[0].clientX; }
-        function handleMove(e) {
-            let card = e.currentTarget;
-            currentX = e.touches[0].clientX - startX;
-            if (currentX > 85) currentX = 85;
-            if (currentX < -85) currentX = -85;
-            card.style.transform = `translateX(${currentX}px)`;
-            card.style.transition = "none";
-        }
-        function handleEnd(e) {
-            let card = e.currentTarget;
-            card.style.transition = "transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28)";
-            if (currentX > 50) card.style.transform = `translateX(80px)`;
-            else if (currentX < -50) card.style.transform = `translateX(-80px)`;
-            else card.style.transform = `translateX(0px)`;
-            currentX = 0;
+            filtrate.forEach(r => {
+                lista.innerHTML += `
+                    <div class="recipe-item" onclick="apriDettaglio('${r.id}')">
+                        <span>${r.title}</span><span>›</span>
+                    </div>`;
+            });
+            document.getElementById('folder-view').style.display = 'block';
         }
 
         function apriDettaglio(id) {
             const r = tutteLeRicette.find(x => x.id === id);
             document.getElementById('det-title').innerText = r.title;
-            document.getElementById('det-cat').innerText = (catEmojis[r.categoria] || "") + " " + r.categoria;
             document.getElementById('det-ing').innerText = r.ing;
             document.getElementById('detail-view').style.display = 'block';
-        }
-
-        function chiudiDettaglio() { document.getElementById('detail-view').style.display = 'none'; }
-
-        function elimina(id) {
-            if(confirm("Löschen?")) db.ref('ricette/' + id).remove();
-        }
-
-        function preparaModifica(id) {
-            const r = tutteLeRicette.find(x => x.id === id);
-            editId = r.id;
-            document.getElementById('tit').value = r.title;
-            document.getElementById('categoria').value = r.categoria;
-            document.getElementById('ing').value = r.ing;
-            document.getElementById('save-btn').innerText = "💾 UPDATE";
-            window.scrollTo(0,0);
         }
 
         function salva() {
             const t = document.getElementById('tit').value;
             const c = document.getElementById('categoria').value;
             const i = document.getElementById('ing').value;
-            if(!t) return alert("Titel!");
-            if(editId) db.ref('ricette/' + editId).set({ title: t, categoria: c, ing: i }).then(resetForm);
-            else db.ref('ricette').push({ title: t, categoria: c, ing: i }).then(resetForm);
-        }
-
-        function resetForm() {
-            editId = null;
-            document.getElementById('tit').value = "";
-            document.getElementById('ing').value = "";
-            document.getElementById('save-btn').innerText = "💾 SPEICHERN";
-        }
-
-        function pulisci() {
-            let t = document.getElementById('ing').value;
-            if(!t) return;
-            let righe = t.split(/[\n,]+/).map(r => r.trim()).filter(r => r.length > 0);
-            document.getElementById('ing').value = righe.map(r => "• " + r.charAt(0).toUpperCase() + r.slice(1)).join('\n');
-        }
-
-        function svuota() { document.getElementById('ing').value = ""; }
-        function filtra() {
-            const q = document.getElementById('search').value.toLowerCase();
-            const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(q));
-            mostraRicette(filtrate);
+            if(!t) return alert("Manca il titolo!");
+            db.ref('ricette').push({ title: t, categoria: c, ing: i }).then(() => {
+                document.getElementById('tit').value = "";
+                document.getElementById('ing').value = "";
+                document.getElementById('form-view').style.display = 'none';
+            });
         }
     </script>
 </body>
