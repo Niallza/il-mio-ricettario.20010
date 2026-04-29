@@ -9,47 +9,23 @@
     <style>
         :root { --primary: #007aff; --success: #34c759; --bg: #f2f2f7; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; }
-        
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
         h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; color: #1c1c1e; }
-        
-        .search-box { 
-            width: 100%; padding: 12px 15px; border-radius: 12px; border: none; 
-            background: #e5e5ea; margin-bottom: 20px; font-size: 16px; box-sizing: border-box;
-        }
-
+        .search-box { width: 100%; padding: 12px 15px; border-radius: 12px; border: none; background: #e5e5ea; margin-bottom: 20px; font-size: 16px; box-sizing: border-box; }
         label { font-size: 11px; font-weight: bold; color: #8e8e93; text-transform: uppercase; margin-left: 5px; }
-        input, textarea, select { 
-            width: 100%; padding: 15px; margin: 5px 0 15px; border-radius: 12px; 
-            border: 1px solid #d1d1d6; font-size: 16px; box-sizing: border-box; background: #fff;
-        }
-
+        input, textarea, select { width: 100%; padding: 15px; margin: 5px 0 15px; border-radius: 12px; border: 1px solid #d1d1d6; font-size: 16px; box-sizing: border-box; background: #fff; }
         .toolbar { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-tool { 
-            background: #f2f2f7; color: #007aff; border: none; padding: 10px; 
-            border-radius: 10px; font-size: 13px; font-weight: 600; flex: 1;
-        }
-
-        .btn-save { 
-            background: var(--success); color: white; border: none; padding: 18px;
-            border-radius: 16px; width: 100%; font-weight: bold; font-size: 18px;
-        }
-
-        .recipe-card { 
-            background: white; padding: 18px; border-radius: 16px; margin-top: 10px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column;
-            cursor: pointer;
-        }
-        .recipe-header { display: flex; justify-content: space-between; align-items: center; }
+        .btn-tool { background: #f2f2f7; color: #007aff; border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; flex: 1; }
+        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 16px; width: 100%; font-weight: bold; font-size: 18px; }
+        
+        /* Sistema Categorie/Cartelle */
+        .category-section { margin-top: 25px; }
+        .category-title { font-size: 14px; font-weight: bold; color: #8e8e93; text-transform: uppercase; margin-bottom: 10px; padding-left: 5px; }
+        
+        .recipe-card { background: white; padding: 18px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .recipe-name { font-weight: 700; font-size: 17px; }
-        .recipe-cat { font-size: 12px; color: #007aff; font-weight: 600; margin-top: 4px; }
 
-        /* Stile per il dettaglio ricetta */
-        #detail-view {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 1000; padding: 40px 20px; box-sizing: border-box;
-            overflow-y: auto;
-        }
+        #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; padding: 40px 20px; box-sizing: border-box; overflow-y: auto; }
         .close-btn { background: #e5e5ea; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; margin-bottom: 20px; }
     </style>
 </head>
@@ -57,13 +33,11 @@
 
     <div id="main-content">
         <h1>👨‍🍳 Rezeptbuch</h1>
-
         <input type="text" id="search" class="search-box" placeholder="🔍 Rezept suchen..." onkeyup="filtra()">
 
         <div class="card">
             <label>Titel</label>
             <input type="text" id="tit" placeholder="z.B. Carbonara">
-
             <label>Kategorie</label>
             <select id="categoria">
                 <option value="Vorspeisen">Vorspeisen</option>
@@ -72,24 +46,21 @@
                 <option value="Desserts">Desserts</option>
                 <option value="Sonstiges" selected>Sonstiges</option>
             </select>
-
             <label>Zutaten & Zubereitung</label>
-            <textarea id="ing" rows="6" placeholder="Text scannen oder schreiben..."></textarea>
-            
+            <textarea id="ing" rows="6" placeholder="Text scannen..."></textarea>
             <div class="toolbar">
                 <button class="btn-tool" onclick="pulisci()">✨ Liste ordnen</button>
                 <button class="btn-tool" onclick="svuota()">🗑️ Löschen</button>
             </div>
-
             <button class="btn-save" onclick="salva()">💾 SPEICHERN</button>
         </div>
 
-        <div id="lista"></div>
+        <div id="lista-contenitore"></div>
     </div>
 
     <div id="detail-view">
         <button class="close-btn" onclick="chiudiDettaglio()">← Zurück</button>
-        <h2 id="det-title" style="margin-top:0;"></h2>
+        <h2 id="det-title"></h2>
         <p id="det-cat" style="color:#007aff; font-weight:bold;"></p>
         <hr>
         <div id="det-ing" style="white-space: pre-wrap; line-height: 1.6; font-size: 18px;"></div>
@@ -112,40 +83,46 @@
         db.ref('ricette').on('value', s => {
             const data = s.val();
             tutteLeRicette = data ? Object.keys(data).map(id => ({...data[id], id})) : [];
-            mostraRicette(tutteLeRicette.reverse());
+            mostraRicette(tutteLeRicette);
         });
 
         function mostraRicette(array) {
-            const list = document.getElementById('lista');
-            list.innerHTML = "";
-            array.forEach(r => {
-                list.innerHTML += `
-                    <div class="recipe-card" onclick="apriDettaglio('${r.id}')">
-                        <div class="recipe-header">
-                            <span class="recipe-name">${r.title}</span>
-                            <span style="color:#c7c7cc">›</span>
-                        </div>
-                        <span class="recipe-cat">${r.categoria || 'Sonstiges'}</span>
-                    </div>`;
+            const cont = document.getElementById('lista-contenitore');
+            cont.innerHTML = "";
+            const cats = ["Vorspeisen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"];
+            
+            cats.forEach(c => {
+                const filtrate = array.filter(r => r.categoria === c);
+                if(filtrate.length > 0) {
+                    let html = `<div class="category-section"><div class="category-title">${c}</div>`;
+                    filtrate.forEach(r => {
+                        html += `
+                            <div class="recipe-card" onclick="apriDettaglio('${r.id}')">
+                                <span class="recipe-name">${r.title}</span>
+                                <span style="color:#c7c7cc">›</span>
+                            </div>`;
+                    });
+                    html += `</div>`;
+                    cont.innerHTML += html;
+                }
             });
         }
 
         function apriDettaglio(id) {
             const r = tutteLeRicette.find(x => x.id === id);
+            if(!r) return;
             document.getElementById('det-title').innerText = r.title;
-            document.getElementById('det-cat').innerText = r.categoria || "Sonstiges";
+            document.getElementById('det-cat').innerText = r.categoria;
             document.getElementById('det-ing').innerText = r.ing;
             document.getElementById('detail-view').style.display = 'block';
             window.scrollTo(0,0);
         }
 
-        function chiudiDettaglio() {
-            document.getElementById('detail-view').style.display = 'none';
-        }
-
+        function chiudiDettaglio() { document.getElementById('detail-view').style.display = 'none'; }
+        
         function filtra() {
-            const query = document.getElementById('search').value.toLowerCase();
-            const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(query));
+            const q = document.getElementById('search').value.toLowerCase();
+            const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(q));
             mostraRicette(filtrate);
         }
 
@@ -162,15 +139,12 @@
             const t = document.getElementById('tit').value;
             const c = document.getElementById('categoria').value;
             const i = document.getElementById('ing').value;
-            if(!t) return alert("Bitte Titel eingeben!");
-            
-            db.ref('ricette').push({ title: t, categoria: c, ing: i })
-            .then(() => {
+            if(!t) return alert("Titel!");
+            db.ref('ricette').push({ title: t, categoria: c, ing: i }).then(() => {
                 document.getElementById('tit').value = "";
                 document.getElementById('ing').value = "";
                 alert("✅ Gespeichert!");
-            })
-            .catch(err => alert("Fehler: " + err.message));
+            });
         }
     </script>
 </body>
