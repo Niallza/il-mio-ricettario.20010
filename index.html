@@ -3,35 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ricettario</title>
+    <title>Ricettario Smart</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f1f2f6; padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: #ff4757; color: white; font-size: 16px; }
-        .btn-ocr { background: #5856d6; margin-bottom: 20px; }
-        #lista { margin-top: 20px; }
-        .item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #ff4757; }
+        body { font-family: -apple-system, sans-serif; background: #f1f2f6; padding: 20px; text-align: center; }
+        .box { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: #ff4757; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 15px; border: 1px solid #eee; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-ocr { background: #5856d6; color: white; margin-bottom: 20px; }
+        .btn-save { background: #ff4757; color: white; }
+        #status { color: #5856d6; font-weight: bold; margin: 10px 0; min-height: 20px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>🍳 Nuova Ricetta</h2>
-    <button class="btn-ocr" id="btn-foto" onclick="document.getElementById('file-input').click()">📸 CARICA FOTO / SCATTA</button>
-    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="elaboraFoto(this)">
+    <h2>🍳 Nuovo Piatto</h2>
+    <div id="status"></div>
     
-    <input type="text" id="titolo" placeholder="Nome ricetta">
-    <textarea id="ingredienti" rows="5" placeholder="Ingredienti..."></textarea>
-    <button onclick="salva()">💾 SALVA NEL RICETTARIO</button>
+    <button class="btn-ocr" id="btn-foto" onclick="document.getElementById('file-in').click()">📸 LEGGI TESTO DA FOTO</button>
+    <input type="file" id="file-in" accept="image/*" style="display:none" onchange="processaImmagine(this)">
+    
+    <input type="text" id="tit" placeholder="Titolo della ricetta">
+    <textarea id="ing" rows="6" placeholder="Gli ingredienti appariranno qui..."></textarea>
+    
+    <button class="btn-save" onclick="salva()">💾 SALVA NELLA LISTA</button>
 </div>
 
-<div id="lista"></div>
-
 <script>
-    // Configurazione Firebase
+    // FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
         authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
@@ -44,60 +46,70 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Carica Ricette
-    db.ref('ricette').on('value', s => {
-        const d = s.val();
-        document.getElementById('lista').innerHTML = d ? Object.keys(d).map(k => `<div class="item">${d[k].title}</div>`).join('') : '';
-    });
-
-    // Funzione OCR (IA)
-    async function elaboraFoto(input) {
+    async function processaImmagine(input) {
         if (!input.files[0]) return;
+        const status = document.getElementById('status');
         const btn = document.getElementById('btn-foto');
-        btn.innerText = "⌛ Lettura in corso...";
+        
+        status.innerText = "⏳ Compressione foto...";
         btn.disabled = true;
 
-        const fd = new FormData();
-        fd.append("file", input.files[0]);
-        fd.append("apikey", "K81062382588957");
-        fd.append("language", "ita");
+        // --- TRUCCO PER IPHONE: Ridimensiona la foto prima di inviarla ---
+        const reader = new FileReader();
+        reader.readAsDataURL(input.files[0]);
+        reader.onload = async (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const max_size = 1000; // Riduce a 1000 pixel per lato (leggerissima!)
+                let w = img.width;
+                let h = img.height;
+                if (w > h) { if (w > max_size) { h *= max_size / w; w = max_size; } }
+                else { if (h > max_size) { w *= max_size / h; h = max_size; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                
+                // Trasforma in un file piccolo
+                canvas.toBlob(async (blob) => {
+                    status.innerText = "🚀 Invio all'IA in corso...";
+                    const fd = new FormData();
+                    fd.append("file", blob, "foto.jpg");
+                    fd.append("apikey", "K81062382588957");
+                    fd.append("language", "ita");
 
-        try {
-            const res = await fetch("https://api.ocr.space/parse/image", { 
-                method: "POST", 
-                body: fd,
-                referrerPolicy: "no-referrer-when-downgrade" // Aiuta Safari a non bloccare la richiesta
-            });
-            const data = await res.json();
-            
-            if (data.ParsedResults && data.ParsedResults.length > 0) {
-                document.getElementById('ingredienti').value = data.ParsedResults[0].ParsedText;
-                alert("✨ Testo estratto con successo!");
-            } else {
-                alert("❌ Non riesco a leggere bene la foto. Prova con una più nitida.");
-            }
-        } catch (e) {
-            console.error(e);
-            alert("❌ Errore di caricamento. Prova a spegnere il Wi-Fi e usare il 4G/5G.");
-        } finally {
-            btn.innerText = "📸 CARICA FOTO / SCATTA";
-            btn.disabled = false;
-        }
+                    try {
+                        const res = await fetch("https://api.ocr.space/parse/image", { 
+                            method: "POST", 
+                            body: fd
+                        });
+                        const data = await res.json();
+                        
+                        if (data.ParsedResults) {
+                            document.getElementById('ing').value = data.ParsedResults[0].ParsedText;
+                            status.innerText = "✅ Testo letto!";
+                        } else {
+                            status.innerText = "❌ Errore IA: foto poco chiara.";
+                        }
+                    } catch (e) {
+                        status.innerText = "❌ Errore di rete. Riprova.";
+                    } finally {
+                        btn.disabled = false;
+                    }
+                }, 'image/jpeg', 0.7); // Qualità 70%
+            };
+        };
     }
 
-    // Salva su Firebase
     function salva() {
-        const t = document.getElementById('titolo').value;
-        const i = document.getElementById('ingredienti').value;
-        if (!t) return alert("Inserisci un titolo!");
-        
+        const t = document.getElementById('tit').value;
+        const i = document.getElementById('ing').value;
+        if (!t) return alert("Metti un titolo!");
         db.ref('ricette').push({ title: t, ing: i }).then(() => {
-            document.getElementById('titolo').value = "";
-            document.getElementById('ingredienti').value = "";
-            alert("✅ Ricetta salvata!");
+            alert("Salvata!");
+            location.reload();
         });
     }
 </script>
-
 </body>
 </html>
