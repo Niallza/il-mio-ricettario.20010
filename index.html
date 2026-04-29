@@ -1,46 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Ricette</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ricettario</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f1f2f6; padding: 20px; }
+        .box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: #ff4757; color: white; font-size: 16px; }
+        .btn-ocr { background: #5856d6; margin-bottom: 20px; }
+        #lista { margin-top: 20px; }
+        .item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #ff4757; }
+    </style>
 </head>
 <body>
-    <h1>Test Funzionamento</h1>
-    <button onclick="document.getElementById('f').click()" style="padding:20px; background:blue; color:white;">📸 PROVA FOTOCAMERA</button>
-    <input type="file" id="f" accept="image/*" style="display:none" onchange="testOCR(this)">
-    <div id="status"></div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
-            authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
-            databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "ricettario-laboratorio-92621",
-            storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
-            messagingSenderId: "393684653408",
-            appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
-        };
-        firebase.initializeApp(firebaseConfig);
-        
-        async function testOCR(input) {
-            const status = document.getElementById('status');
-            status.innerText = "Caricamento in corso...";
-            const fd = new FormData();
-            fd.append("file", input.files[0]);
-            fd.append("apikey", "K81062382588957");
-            fd.append("language", "ita");
+<div class="box">
+    <h2>🍳 Nuova Ricetta</h2>
+    <button class="btn-ocr" id="btn-foto" onclick="document.getElementById('file-input').click()">📸 CARICA FOTO / SCATTA</button>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="elaboraFoto(this)">
+    
+    <input type="text" id="titolo" placeholder="Nome ricetta">
+    <textarea id="ingredienti" rows="5" placeholder="Ingredienti..."></textarea>
+    <button onclick="salva()">💾 SALVA NEL RICETTARIO</button>
+</div>
 
-            try {
-                const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: fd });
-                const j = await res.json();
-                status.innerText = "Risultato: " + JSON.stringify(j);
-            } catch(e) {
-                status.innerText = "Errore: " + e.message;
+<div id="lista"></div>
+
+<script>
+    // Configurazione Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
+        authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
+        databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "ricettario-laboratorio-92621",
+        storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
+        messagingSenderId: "393684653408",
+        appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Carica Ricette
+    db.ref('ricette').on('value', s => {
+        const d = s.val();
+        document.getElementById('lista').innerHTML = d ? Object.keys(d).map(k => `<div class="item">${d[k].title}</div>`).join('') : '';
+    });
+
+    // Funzione OCR (IA)
+    async function elaboraFoto(input) {
+        if (!input.files[0]) return;
+        const btn = document.getElementById('btn-foto');
+        btn.innerText = "⌛ Lettura in corso...";
+        btn.disabled = true;
+
+        const fd = new FormData();
+        fd.append("file", input.files[0]);
+        fd.append("apikey", "K81062382588957");
+        fd.append("language", "ita");
+
+        try {
+            const res = await fetch("https://api.ocr.space/parse/image", { 
+                method: "POST", 
+                body: fd,
+                referrerPolicy: "no-referrer-when-downgrade" // Aiuta Safari a non bloccare la richiesta
+            });
+            const data = await res.json();
+            
+            if (data.ParsedResults && data.ParsedResults.length > 0) {
+                document.getElementById('ingredienti').value = data.ParsedResults[0].ParsedText;
+                alert("✨ Testo estratto con successo!");
+            } else {
+                alert("❌ Non riesco a leggere bene la foto. Prova con una più nitida.");
             }
+        } catch (e) {
+            console.error(e);
+            alert("❌ Errore di caricamento. Prova a spegnere il Wi-Fi e usare il 4G/5G.");
+        } finally {
+            btn.innerText = "📸 CARICA FOTO / SCATTA";
+            btn.disabled = false;
         }
-    </script>
+    }
+
+    // Salva su Firebase
+    function salva() {
+        const t = document.getElementById('titolo').value;
+        const i = document.getElementById('ingredienti').value;
+        if (!t) return alert("Inserisci un titolo!");
+        
+        db.ref('ricette').push({ title: t, ing: i }).then(() => {
+            document.getElementById('titolo').value = "";
+            document.getElementById('ingredienti').value = "";
+            alert("✅ Ricetta salvata!");
+        });
+    }
+</script>
+
 </body>
 </html>
