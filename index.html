@@ -3,161 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ricettario Smart</title>
-    
+    <title>Ricettario</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff4757">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="icon.png">
-
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
     <style>
-        :root { --primary: #ff4757; --bg: #f1f2f6; --card: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; }
-        h1 { font-size: 28px; color: #2f3542; }
-        #search-bar { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 20px; font-size: 16px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .folder { background: var(--card); padding: 20px; border-radius: 20px; text-align: center; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .recipe-item { background: white; margin-bottom: 10px; padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); font-weight: bold; }
-        .fab { position: fixed; bottom: 30px; right: 25px; background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100; }
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; padding: 40px 20px; z-index: 1000; overflow-y: auto; }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #eee; background: #f9f9f9; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-p { background: var(--primary); color: white; }
-        .hidden { display: none !important; }
+        body { font-family: -apple-system, sans-serif; background: #f1f2f6; margin: 0; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .btn-add { background: #ff4757; position: fixed; bottom: 30px; right: 20px; width: 60px; height: 60px; border-radius: 30px; font-size: 30px; z-index: 99; }
+        .btn-save { background: #ff4757; margin-top: 10px; }
+        .btn-ocr { background: #5856d6; margin-bottom: 10px; }
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; padding: 20px; z-index: 1000; overflow-y: auto; box-sizing: border-box; }
+        .hidden { display: none; }
+        .recipe-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #ff4757; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="home">
-        <h1>🍳 Ricettario Smart</h1>
-        <input type="text" id="search-bar" placeholder="Cerca ricetta..." oninput="search()">
-        <div id="results" class="hidden"></div>
-        <div class="grid" id="grid"></div>
-    </div>
+<div id="home">
+    <h1>🍳 Le mie Ricette</h1>
+    <div id="lista-ricette"></div>
+</div>
 
-    <div id="list" class="hidden">
-        <button onclick="showHome()">← Indietro</button>
-        <h2 id="cat-title"></h2>
-        <div id="items"></div>
-    </div>
+<div id="modal">
+    <h2>Nuova Ricetta</h2>
+    <button class="btn-ocr" onclick="document.getElementById('f').click()">📸 SCATTA FOTO</button>
+    <input type="file" id="f" accept="image/*" style="display:none" onchange="readOCR(this)">
+    <input type="text" id="tit" placeholder="Titolo">
+    <input type="text" id="cat" placeholder="Categoria (es. Pasta)">
+    <textarea id="ing" rows="5" placeholder="Ingredienti"></textarea>
+    <textarea id="pro" rows="8" placeholder="Procedimento"></textarea>
+    <button class="btn-save" onclick="save()">💾 SALVA</button>
+    <button onclick="document.getElementById('modal').style.display='none'" style="background:none; color:gray; margin-top:10px;">Annulla</button>
+</div>
 
-    <div id="detail" class="hidden">
-        <button onclick="backToList()">← Lista</button>
-        <h1 id="d-title"></h1>
-        <p><strong>Ingredienti:</strong></p>
-        <div id="d-ing" style="white-space: pre-wrap;"></div>
-        <p><strong>Procedimento:</strong></p>
-        <div id="d-step" style="white-space: pre-wrap;"></div>
-        <button onclick="deleteR()" style="color:red; background:none; border:none; margin-top:20px;">Elimina Ricetta</button>
-    </div>
+<button class="btn-add" onclick="document.getElementById('modal').style.display='block'">+</button>
 
-    <div id="modal">
-        <h2>Nuova Ricetta</h2>
-        <button class="btn" style="background:#5856d6; color:white; margin-bottom:10px;" onclick="document.getElementById('file-in').click()">📸 SCATTA FOTO</button>
-        <input type="file" id="file-in" accept="image/*" style="display:none" onchange="runOCR(this)">
-        <input type="text" id="t" placeholder="Titolo">
-        <input type="text" id="c" placeholder="Categoria (es. Pasta)">
-        <textarea id="i" rows="4" placeholder="Ingredienti"></textarea>
-        <textarea id="p" rows="6" placeholder="Procedimento"></textarea>
-        <button class="btn btn-p" onclick="save()">SALVA RICETTA</button>
-        <button onclick="closeM()" style="width:100%; margin-top:10px; background:none; border:none; color:gray;">Annulla</button>
-    </div>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
+        authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
+        databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "ricettario-laboratorio-92621",
+        storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
+        messagingSenderId: "393684653408",
+        appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    <button class="fab" onclick="openM()">+</button>
+    db.ref('ricette').on('value', s => {
+        const d = s.val();
+        const box = document.getElementById('lista-ricette');
+        box.innerHTML = d ? Object.keys(d).map(k => `<div class="recipe-box">${d[k].title}</div>`).join('') : 'Nessuna ricetta.';
+    });
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
-            authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
-            databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "ricettario-laboratorio-92621",
-            storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
-            messagingSenderId: "393684653408",
-            appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let recipes = [];
-        let current = null;
-
-        db.ref('ricette').on('value', s => {
-            const d = s.val();
-            recipes = d ? Object.keys(d).map(k => ({id:k, ...d[k]})) : [];
-            showHome();
-        });
-
-        async function runOCR(input) {
-            if(!input.files[0]) return;
-            const btn = document.querySelector("#modal button");
-            btn.innerText = "Leggendo...";
-            const fd = new FormData();
-            fd.append("file", input.files[0]);
-            fd.append("apikey", "K81062382588957");
-            fd.append("language", "ita");
-            try {
-                const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: fd });
-                const json = await res.json();
-                if(json.ParsedResults) {
-                    document.getElementById('i').value = json.ParsedResults[0].ParsedText;
-                    alert("Testo estratto!");
-                }
-            } catch(e) { alert("Errore OCR"); }
-            btn.innerText = "📸 SCATTA FOTO";
-        }
-
-        function showHome() {
-            document.getElementById('home').classList.remove('hidden');
-            document.getElementById('list').classList.add('hidden');
-            document.getElementById('detail').classList.add('hidden');
-            const cats = [...new Set(recipes.map(r => r.cat))];
-            document.getElementById('grid').innerHTML = cats.map(c => `<div class="folder" onclick="showCat('${c}')">${c}</div>`).join('');
-        }
-
-        function showCat(c) {
-            document.getElementById('home').classList.add('hidden');
-            document.getElementById('list').classList.remove('hidden');
-            document.getElementById('cat-title').innerText = c;
-            const filtered = recipes.filter(r => r.cat === c);
-            document.getElementById('items').innerHTML = filtered.map(r => `<div class="recipe-item" onclick="showDet('${r.id}')">${r.title}</div>`).join('');
-        }
-
-        function showDet(id) {
-            current = recipes.find(r => r.id === id);
-            document.getElementById('list').classList.add('hidden');
-            document.getElementById('detail').classList.remove('hidden');
-            document.getElementById('d-title').innerText = current.title;
-            document.getElementById('d-ing').innerText = current.ing;
-            document.getElementById('d-step').innerText = current.step;
-        }
-
-        function backToList() { showCat(current.cat); }
-        function openM() { document.getElementById('modal').style.display='block'; }
-        function closeM() { document.getElementById('modal').style.display='none'; }
-
-        function save() {
-            const data = { title: document.getElementById('t').value, cat: document.getElementById('c').value || "Varie", ing: document.getElementById('i').value, step: document.getElementById('p').value };
-            if(!data.title) return alert("Inserisci un titolo");
-            db.ref('ricette').push(data).then(() => { closeM(); alert("Salvata!"); });
-        }
-
-        function deleteR() { if(confirm("Eliminare?")) { db.ref('ricette/'+current.id).remove(); showHome(); } }
-        
-        function search() {
-            const q = document.getElementById('search-bar').value.toLowerCase();
-            const res = document.getElementById('results');
-            if(q) {
-                document.getElementById('grid').classList.add('hidden');
-                res.classList.remove('hidden');
-                const f = recipes.filter(r => r.title.toLowerCase().includes(q));
-                res.innerHTML = f.map(r => `<div class="recipe-item" onclick="showDet('${r.id}')">${r.title}</div>`).join('');
-            } else {
-                document.getElementById('grid').classList.remove('hidden');
-                res.classList.add('hidden');
+    async function readOCR(input) {
+        if(!input.files[0]) return;
+        const fd = new FormData();
+        fd.append("file", input.files[0]);
+        fd.append("apikey", "K81062382588957");
+        fd.append("language", "ita");
+        try {
+            const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: fd });
+            const j = await res.json();
+            if(j.ParsedResults) {
+                document.getElementById('ing').value = j.ParsedResults[0].ParsedText;
+                alert("Testo letto!");
             }
-        }
-    </script>
+        } catch(e) { alert("Errore lettura"); }
+    }
+
+    function save() {
+        const r = { title: document.getElementById('tit').value, cat: document.getElementById('cat').value || "Varie", ing: document.getElementById('ing').value, step: document.getElementById('pro').value };
+        if(!r.title) return alert("Metti il titolo!");
+        db.ref('ricette').push(r).then(() => {
+            document.getElementById('modal').style.display='none';
+            alert("Salvata!");
+        });
+    }
+</script>
 </body>
 </html>
