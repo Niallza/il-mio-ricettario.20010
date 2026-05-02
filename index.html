@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ricettario Professionale</title>
+    <title>Ricettario Pro</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
@@ -12,20 +12,23 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; color: #1c1c1e; }
         h1 { font-size: 26px; font-weight: 800; margin: 10px 0 20px; text-align: center; text-transform: uppercase; }
 
-        /* Griglia Cartelle */
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; max-width: 800px; margin: 0 auto; }
         .folder { height: 140px; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
         .folder:active { transform: scale(0.95); }
         .folder-icon { font-size: 40px; margin-bottom: 10px; }
         .folder-count { font-size: 12px; opacity: 0.9; margin-top: 5px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; }
 
-        .f-kalt { background: #2c5282; } .f-warm { background: #d69e2e; } .f-haupt { background: #9b2c2c; }
-        .f-beil { background: #2f855a; } .f-dessert { background: #805ad5; } .f-andere { background: #4a5568; }
-        .f-suppe { background: #ed8936; } /* Colore arancione per le zuppe */
+        /* Colori dinamici (basta aggiungere .f-nomeID) */
+        .f-Vorspeisen { background: #2c5282; }
+        .f-Suppen { background: #ed8936; }
+        .f-Warme_Vorspeisen { background: #d69e2e; }
+        .f-Hauptspeisen { background: #9b2c2c; }
+        .f-Beilagen { background: #2f855a; }
+        .f-Desserts { background: #805ad5; }
+        .f-Sonstiges { background: #4a5568; }
 
         #folder-view, #detail-view, #form-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; padding: 40px 15px; box-sizing: border-box; overflow-y: auto; }
         .recipe-item { background: white; padding: 15px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.05); max-width: 600px; margin-inline: auto; }
-        #detail-view { background: white; z-index: 300; }
         .detail-body { max-width: 600px; margin: 0 auto; }
         .section-title { font-size: 14px; color: var(--primary); font-weight: bold; text-transform: uppercase; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: block; }
         .content-text { white-space: pre-wrap; line-height: 1.6; font-size: 18px; margin-top: 10px; display: block; color: #3a3a3c; }
@@ -41,15 +44,7 @@
 
     <div id="main-content">
         <h1>Le Mie Ricette</h1>
-        <div class="folder-grid">
-            <div class="folder f-kalt" onclick="apriCartella('Vorspeisen')"><span class="folder-icon">🥗</span><span>KALT</span><span class="folder-count" id="count-Vorspeisen">0</span></div>
-            <div class="folder f-warm" onclick="apriCartella('Warme Vorspeisen')"><span class="folder-icon">🥘</span><span>WARM</span><span class="folder-count" id="count-Warme Vorspeisen">0</span></div>
-            <div class="folder f-suppe" onclick="apriCartella('Suppen')"><span class="folder-icon">🥣</span><span>SUPPEN</span><span class="folder-count" id="count-Suppen">0</span></div>
-            <div class="folder f-haupt" onclick="apriCartella('Hauptspeisen')"><span class="folder-icon">🍝</span><span>HAUPT</span><span class="folder-count" id="count-Hauptspeisen">0</span></div>
-            <div class="folder f-beil" onclick="apriCartella('Beilagen')"><span class="folder-icon">🥦</span><span>BEILAGEN</span><span class="folder-count" id="count-Beilagen">0</span></div>
-            <div class="folder f-dessert" onclick="apriCartella('Desserts')"><span class="folder-icon">🍰</span><span>DESSERT</span><span class="folder-count" id="count-Desserts">0</span></div>
-            <div class="folder f-andere" onclick="apriCartella('Sonstiges')"><span class="folder-icon">📦</span><span>ANDERE</span><span class="folder-count" id="count-Sonstiges">0</span></div>
-        </div>
+        <div class="folder-grid" id="griglia-cartelle"></div>
     </div>
 
     <div class="fab" onclick="apriNuovo()">+</div>
@@ -63,19 +58,14 @@
     </div>
 
     <div id="detail-view">
-        <div class="detail-header" style="max-width:600px; margin:0 auto 20px; display:flex; justify-content:space-between;">
+        <div style="max-width:600px; margin:0 auto 20px; display:flex; justify-content:space-between;">
             <button class="btn-mini" onclick="document.getElementById('detail-view').style.display='none'">← Chiudi</button>
-            <div>
-                <button class="btn-mini" id="btn-edit-det">✏️</button>
-                <button class="btn-mini" id="btn-del-det" style="color:var(--danger)">🗑️</button>
-            </div>
+            <div><button class="btn-mini" id="btn-edit-det">✏️</button><button class="btn-mini" id="btn-del-det" style="color:var(--danger)">🗑️</button></div>
         </div>
         <div class="detail-body">
             <h2 id="det-title" style="font-size:28px; margin:0;"></h2>
-            <span class="section-title">Ingredienti</span>
-            <span id="det-ing" class="content-text"></span>
-            <span class="section-title">Procedimento</span>
-            <span id="det-proc" class="content-text"></span>
+            <span class="section-title">Ingredienti</span><span id="det-ing" class="content-text"></span>
+            <span class="section-title">Procedimento</span><span id="det-proc" class="content-text"></span>
         </div>
     </div>
 
@@ -84,15 +74,7 @@
             <button class="btn-close" onclick="chiudiForm()">Annulla</button>
             <h2 id="form-label" style="margin:0;">Nuova Ricetta</h2>
             <input type="text" id="tit" placeholder="Titolo">
-            <select id="categoria">
-                <option value="Vorspeisen">🥗 Kalt</option>
-                <option value="Warme Vorspeisen">🥘 Warm</option>
-                <option value="Suppen">🥣 Suppen</option>
-                <option value="Hauptspeisen">🍝 Haupt</option>
-                <option value="Beilagen">🥦 Beilagen</option>
-                <option value="Desserts">🍰 Dessert</option>
-                <option value="Sonstiges">📦 Andere</option>
-            </select>
+            <select id="categoria"></select>
             <textarea id="ing" rows="6" placeholder="Ingredienti..."></textarea>
             <textarea id="proc" rows="10" placeholder="Procedimento..."></textarea>
             <button class="btn-save" onclick="salva()">💾 SALVA</button>
@@ -100,6 +82,17 @@
     </div>
 
     <script>
+        // --- QUI DECIDI L'ORDINE (Basta spostare le righe) ---
+        const categorie = [
+            { id: "Vorspeisen", nome: "KALT", icona: "🥗" },
+            { id: "Suppen", nome: "SUPPEN", icona: "🥣" },
+            { id: "Warme Vorspeisen", nome: "WARM", icona: "🥘" },
+            { id: "Hauptspeisen", nome: "HAUPT", icona: "🍝" },
+            { id: "Beilagen", nome: "BEILAGEN", icona: "🥦" },
+            { id: "Desserts", nome: "DESSERT", icona: "🍰" },
+            { id: "Sonstiges", nome: "ANDERE", icona: "📦" }
+        ];
+
         const firebaseConfig = {
             apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
             authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
@@ -113,24 +106,27 @@
         const db = firebase.database();
         let tutteLeRicette = [];
         let currentEditId = null;
-        let currentOpenCat = "";
 
         db.ref('ricette').on('value', s => {
             const data = s.val();
             tutteLeRicette = data ? Object.keys(data).map(id => ({...data[id], id})) : [];
-            aggiornaContatori();
-            if(currentOpenCat) apriCartella(currentOpenCat);
+            renderizzaCartelle();
         });
 
-        function aggiornaContatori() {
-            ["Vorspeisen", "Warme Vorspeisen", "Suppen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"].forEach(c => {
-                const num = tutteLeRicette.filter(r => r.categoria === c).length;
-                document.getElementById('count-' + c).innerText = num + (num === 1 ? " Ricetta" : " Ricette");
+        function renderizzaCartelle() {
+            const griglia = document.getElementById('griglia-cartelle');
+            const select = document.getElementById('categoria');
+            griglia.innerHTML = ""; select.innerHTML = "";
+            
+            categorie.forEach(cat => {
+                const count = tutteLeRicette.filter(r => r.categoria === cat.id).length;
+                const idClass = cat.id.replace(" ", "_");
+                griglia.innerHTML += `<div class="folder f-${idClass}" onclick="apriCartella('${cat.id}')"><span class="folder-icon">${cat.icona}</span><span>${cat.nome}</span><span class="folder-count">${count} Ricette</span></div>`;
+                select.innerHTML += `<option value="${cat.id}">${cat.icona} ${cat.nome}</option>`;
             });
         }
 
         function apriCartella(cat) {
-            currentOpenCat = cat;
             document.getElementById('folder-title').innerText = cat;
             const lista = document.getElementById('lista-ricette-cartella');
             lista.innerHTML = "";
@@ -140,7 +136,7 @@
             document.getElementById('folder-view').style.display = 'block';
         }
 
-        function chiudiCartella() { currentOpenCat = ""; document.getElementById('folder-view').style.display = 'none'; }
+        function chiudiCartella() { document.getElementById('folder-view').style.display = 'none'; }
 
         function apriDettaglio(id) {
             const r = tutteLeRicette.find(x => x.id === id);
@@ -152,25 +148,9 @@
             document.getElementById('detail-view').style.display = 'block';
         }
 
-        function apriNuovo() {
-            currentEditId = null; document.getElementById('form-label').innerText = "Nuova Ricetta";
-            document.getElementById('tit').value = ""; document.getElementById('ing').value = ""; document.getElementById('proc').value = "";
-            document.getElementById('form-view').style.display = 'block';
-        }
-
-        function preparaModifica(id) {
-            const r = tutteLeRicette.find(x => x.id === id);
-            currentEditId = id;
-            document.getElementById('tit').value = r.title;
-            document.getElementById('categoria').value = r.categoria;
-            document.getElementById('ing').value = r.ing;
-            document.getElementById('proc').value = r.proc || "";
-            document.getElementById('form-label').innerText = "Modifica";
-            document.getElementById('detail-view').style.display = 'none';
-            document.getElementById('form-view').style.display = 'block';
-        }
-
-        function chiudiForm() { document.getElementById('form-view').style.display = 'none'; currentEditId = null; }
+        function apriNuovo() { currentEditId = null; document.getElementById('form-label').innerText = "Nuova Ricetta"; document.getElementById('tit').value = ""; document.getElementById('ing').value = ""; document.getElementById('proc').value = ""; document.getElementById('form-view').style.display = 'block'; }
+        function preparaModifica(id) { const r = tutteLeRicette.find(x => x.id === id); currentEditId = id; document.getElementById('tit').value = r.title; document.getElementById('categoria').value = r.categoria; document.getElementById('ing').value = r.ing; document.getElementById('proc').value = r.proc || ""; document.getElementById('form-label').innerText = "Modifica"; document.getElementById('detail-view').style.display = 'none'; document.getElementById('form-view').style.display = 'block'; }
+        function chiudiForm() { document.getElementById('form-view').style.display = 'none'; }
 
         function salva() {
             const t = document.getElementById('tit').value.trim();
