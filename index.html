@@ -21,18 +21,15 @@
 
         .f-kalt { background: #2c5282; } .f-warm { background: #d69e2e; } .f-haupt { background: #9b2c2c; }
         .f-beil { background: #2f855a; } .f-dessert { background: #805ad5; } .f-andere { background: #4a5568; }
+        .f-suppe { background: #ed8936; } /* Colore arancione per le zuppe */
 
-        /* Viste Modali */
         #folder-view, #detail-view, #form-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; padding: 40px 15px; box-sizing: border-box; overflow-y: auto; }
         .recipe-item { background: white; padding: 15px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.05); max-width: 600px; margin-inline: auto; }
-        
-        /* Dettaglio Ricetta */
         #detail-view { background: white; z-index: 300; }
         .detail-body { max-width: 600px; margin: 0 auto; }
         .section-title { font-size: 14px; color: var(--primary); font-weight: bold; text-transform: uppercase; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: block; }
         .content-text { white-space: pre-wrap; line-height: 1.6; font-size: 18px; margin-top: 10px; display: block; color: #3a3a3c; }
 
-        /* UI Elements */
         .fab { position: fixed; bottom: 30px; right: 20px; width: 65px; height: 65px; background: var(--danger); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; z-index: 100; box-shadow: 0 8px 20px rgba(255,59,48,0.4); cursor: pointer; }
         .btn-mini { border: none; background: #e5e5ea; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
         input, textarea, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; font-family: inherit; }
@@ -47,6 +44,7 @@
         <div class="folder-grid">
             <div class="folder f-kalt" onclick="apriCartella('Vorspeisen')"><span class="folder-icon">🥗</span><span>KALT</span><span class="folder-count" id="count-Vorspeisen">0</span></div>
             <div class="folder f-warm" onclick="apriCartella('Warme Vorspeisen')"><span class="folder-icon">🥘</span><span>WARM</span><span class="folder-count" id="count-Warme Vorspeisen">0</span></div>
+            <div class="folder f-suppe" onclick="apriCartella('Suppen')"><span class="folder-icon">🥣</span><span>SUPPEN</span><span class="folder-count" id="count-Suppen">0</span></div>
             <div class="folder f-haupt" onclick="apriCartella('Hauptspeisen')"><span class="folder-icon">🍝</span><span>HAUPT</span><span class="folder-count" id="count-Hauptspeisen">0</span></div>
             <div class="folder f-beil" onclick="apriCartella('Beilagen')"><span class="folder-icon">🥦</span><span>BEILAGEN</span><span class="folder-count" id="count-Beilagen">0</span></div>
             <div class="folder f-dessert" onclick="apriCartella('Desserts')"><span class="folder-icon">🍰</span><span>DESSERT</span><span class="folder-count" id="count-Desserts">0</span></div>
@@ -89,13 +87,14 @@
             <select id="categoria">
                 <option value="Vorspeisen">🥗 Kalt</option>
                 <option value="Warme Vorspeisen">🥘 Warm</option>
+                <option value="Suppen">🥣 Suppen</option>
                 <option value="Hauptspeisen">🍝 Haupt</option>
                 <option value="Beilagen">🥦 Beilagen</option>
                 <option value="Desserts">🍰 Dessert</option>
                 <option value="Sonstiges">📦 Andere</option>
             </select>
             <textarea id="ing" rows="6" placeholder="Ingredienti..."></textarea>
-            <textarea id="proc" rows="10" placeholder="Procedimento (Passaggi)..."></textarea>
+            <textarea id="proc" rows="10" placeholder="Procedimento..."></textarea>
             <button class="btn-save" onclick="salva()">💾 SALVA</button>
         </div>
     </div>
@@ -124,7 +123,7 @@
         });
 
         function aggiornaContatori() {
-            ["Vorspeisen", "Warme Vorspeisen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"].forEach(c => {
+            ["Vorspeisen", "Warme Vorspeisen", "Suppen", "Hauptspeisen", "Beilagen", "Desserts", "Sonstiges"].forEach(c => {
                 const num = tutteLeRicette.filter(r => r.categoria === c).length;
                 document.getElementById('count-' + c).innerText = num + (num === 1 ? " Ricetta" : " Ricette");
             });
