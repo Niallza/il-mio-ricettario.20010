@@ -10,15 +10,31 @@
     <style>
         :root { --primary: #007aff; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px 15px 100px; color: #1c1c1e; }
-        h1 { font-size: 26px; font-weight: 800; margin: 10px 0 20px; text-align: center; text-transform: uppercase; }
+        
+        .header-container { display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: 10px auto; }
+        h1 { font-size: 24px; font-weight: 800; text-transform: uppercase; margin: 0; }
+        
+        .btn-order-toggle { background: white; border: 1px solid #ddd; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-order-toggle.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+        /* Barra di Ricerca */
+        .search-container { max-width: 800px; margin: 10px auto 20px; position: relative; }
+        #search-input { width: 100%; padding: 12px 15px; border-radius: 12px; border: none; font-size: 16px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); box-sizing: border-box; outline: none; }
+        #search-results { position: absolute; top: 50px; left: 0; width: 100%; background: white; border-radius: 12px; z-index: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; max-height: 300px; overflow-y: auto; }
+        .search-result-item { padding: 15px; border-bottom: 1px solid #f2f2f7; cursor: pointer; display: flex; justify-content: space-between; }
+
+        /* Griglia Cartelle */
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; max-width: 800px; margin: 0 auto; }
-        .folder { height: 140px; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
-        .folder:active { transform: scale(0.95); }
+        .folder { height: 140px; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; position: relative; }
         .folder-icon { font-size: 40px; margin-bottom: 10px; }
-        .folder-count { font-size: 12px; opacity: 0.9; margin-top: 5px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; }
+        .folder-count { font-size: 11px; opacity: 0.9; margin-top: 5px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; }
 
-        /* Colori dinamici (basta aggiungere .f-nomeID) */
+        /* Controlli Spostamento */
+        .order-controls { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-between; padding: 0 10px; box-sizing: border-box; display: none; }
+        .move-btn { background: rgba(255,255,255,0.3); border: none; color: white; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 18px; }
+        .move-btn:hover { background: rgba(255,255,255,0.5); }
+
+        /* Colori dinamici */
         .f-Vorspeisen { background: #2c5282; }
         .f-Suppen { background: #ed8936; }
         .f-Warme_Vorspeisen { background: #d69e2e; }
@@ -27,11 +43,11 @@
         .f-Desserts { background: #805ad5; }
         .f-Sonstiges { background: #4a5568; }
 
+        /* Viste */
         #folder-view, #detail-view, #form-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; padding: 40px 15px; box-sizing: border-box; overflow-y: auto; }
         .recipe-item { background: white; padding: 15px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.05); max-width: 600px; margin-inline: auto; }
-        .detail-body { max-width: 600px; margin: 0 auto; }
-        .section-title { font-size: 14px; color: var(--primary); font-weight: bold; text-transform: uppercase; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: block; }
         .content-text { white-space: pre-wrap; line-height: 1.6; font-size: 18px; margin-top: 10px; display: block; color: #3a3a3c; }
+        .section-title { font-size: 14px; color: var(--primary); font-weight: bold; text-transform: uppercase; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: block; }
 
         .fab { position: fixed; bottom: 30px; right: 20px; width: 65px; height: 65px; background: var(--danger); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; z-index: 100; box-shadow: 0 8px 20px rgba(255,59,48,0.4); cursor: pointer; }
         .btn-mini { border: none; background: #e5e5ea; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
@@ -43,47 +59,34 @@
 <body>
 
     <div id="main-content">
-        <h1>Le Mie Ricette</h1>
+        <div class="header-container">
+            <h1>Le Mie Ricette</h1>
+            <button class="btn-order-toggle" id="order-toggle" onclick="toggleOrderMode()">⚙️ Ordina</button>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Cerca titolo o ingrediente..." oninput="cercaRicette()">
+            <div id="search-results"></div>
+        </div>
+
         <div class="folder-grid" id="griglia-cartelle"></div>
     </div>
 
     <div class="fab" onclick="apriNuovo()">+</div>
 
-    <div id="folder-view">
-        <div style="max-width:600px; margin:0 auto;">
-            <button class="btn-close" onclick="chiudiCartella()">← Indietro</button>
-            <h2 id="folder-title" style="text-align:center; text-transform:uppercase;"></h2>
-            <div id="lista-ricette-cartella"></div>
-        </div>
-    </div>
-
+    <!-- Viste secondarie rimangono invariate nella logica -->
+    <div id="folder-view"><div style="max-width:600px; margin:0 auto;"><button class="btn-close" onclick="chiudiCartella()">← Indietro</button><h2 id="folder-title" style="text-align:center; text-transform:uppercase;"></h2><div id="lista-ricette-cartella"></div></div></div>
+    
     <div id="detail-view">
-        <div style="max-width:600px; margin:0 auto 20px; display:flex; justify-content:space-between;">
-            <button class="btn-mini" onclick="document.getElementById('detail-view').style.display='none'">← Chiudi</button>
-            <div><button class="btn-mini" id="btn-edit-det">✏️</button><button class="btn-mini" id="btn-del-det" style="color:var(--danger)">🗑️</button></div>
-        </div>
-        <div class="detail-body">
-            <h2 id="det-title" style="font-size:28px; margin:0;"></h2>
-            <span class="section-title">Ingredienti</span><span id="det-ing" class="content-text"></span>
-            <span class="section-title">Procedimento</span><span id="det-proc" class="content-text"></span>
-        </div>
+        <div style="max-width:600px; margin:0 auto 20px; display:flex; justify-content:space-between;"><button class="btn-mini" onclick="document.getElementById('detail-view').style.display='none'">← Chiudi</button><div><button class="btn-mini" id="btn-edit-det">✏️</button><button class="btn-mini" id="btn-del-det" style="color:var(--danger)">🗑️</button></div></div>
+        <div class="detail-body"><h2 id="det-title" style="font-size:28px; margin:0;"></h2><span class="section-title">Ingredienti</span><span id="det-ing" class="content-text"></span><span class="section-title">Procedimento</span><span id="det-proc" class="content-text"></span></div>
     </div>
 
-    <div id="form-view">
-        <div style="max-width:600px; margin:0 auto;">
-            <button class="btn-close" onclick="chiudiForm()">Annulla</button>
-            <h2 id="form-label" style="margin:0;">Nuova Ricetta</h2>
-            <input type="text" id="tit" placeholder="Titolo">
-            <select id="categoria"></select>
-            <textarea id="ing" rows="6" placeholder="Ingredienti..."></textarea>
-            <textarea id="proc" rows="10" placeholder="Procedimento..."></textarea>
-            <button class="btn-save" onclick="salva()">💾 SALVA</button>
-        </div>
-    </div>
+    <div id="form-view"><div style="max-width:600px; margin:0 auto;"><button class="btn-close" onclick="chiudiForm()">Annulla</button><h2 id="form-label" style="margin:0;">Nuova Ricetta</h2><input type="text" id="tit" placeholder="Titolo"><select id="categoria"></select><textarea id="ing" rows="6" placeholder="Ingredienti..."></textarea><textarea id="proc" rows="10" placeholder="Procedimento..."></textarea><button class="btn-save" onclick="salva()">💾 SALVA</button></div></div>
 
     <script>
-        // --- QUI DECIDI L'ORDINE (Basta spostare le righe) ---
-        const categorie = [
+        // Carica ordine salvato o usa quello di default
+        let defaultCategorie = [
             { id: "Vorspeisen", nome: "KALT", icona: "🥗" },
             { id: "Suppen", nome: "SUPPEN", icona: "🥣" },
             { id: "Warme Vorspeisen", nome: "WARM", icona: "🥘" },
@@ -92,6 +95,9 @@
             { id: "Desserts", nome: "DESSERT", icona: "🍰" },
             { id: "Sonstiges", nome: "ANDERE", icona: "📦" }
         ];
+
+        let categorie = JSON.parse(localStorage.getItem('ordineCategorie')) || defaultCategorie;
+        let isOrderMode = false;
 
         const firebaseConfig = {
             apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
@@ -118,51 +124,68 @@
             const select = document.getElementById('categoria');
             griglia.innerHTML = ""; select.innerHTML = "";
             
-            categorie.forEach(cat => {
+            categorie.forEach((cat, index) => {
                 const count = tutteLeRicette.filter(r => r.categoria === cat.id).length;
-                const idClass = cat.id.replace(" ", "_");
-                griglia.innerHTML += `<div class="folder f-${idClass}" onclick="apriCartella('${cat.id}')"><span class="folder-icon">${cat.icona}</span><span>${cat.nome}</span><span class="folder-count">${count} Ricette</span></div>`;
+                const idClass = cat.id.replace(/\s+/g, '_');
+                
+                const folderDiv = document.createElement('div');
+                folderDiv.className = `folder f-${idClass}`;
+                folderDiv.onclick = () => { if(!isOrderMode) apriCartella(cat.id); };
+                
+                folderDiv.innerHTML = `
+                    <div class="order-controls" style="display: ${isOrderMode ? 'flex' : 'none'}">
+                        <button class="move-btn" onclick="event.stopPropagation(); sposta(${index}, -1)">←</button>
+                        <button class="move-btn" onclick="event.stopPropagation(); sposta(${index}, 1)">→</button>
+                    </div>
+                    <span class="folder-icon">${cat.icona}</span>
+                    <span>${cat.nome}</span>
+                    <span class="folder-count">${count} Ricette</span>
+                `;
+                
+                griglia.appendChild(folderDiv);
                 select.innerHTML += `<option value="${cat.id}">${cat.icona} ${cat.nome}</option>`;
             });
         }
 
-        function apriCartella(cat) {
-            document.getElementById('folder-title').innerText = cat;
-            const lista = document.getElementById('lista-ricette-cartella');
-            lista.innerHTML = "";
-            tutteLeRicette.filter(r => r.categoria === cat).sort((a,b) => a.title.localeCompare(b.title)).forEach(r => {
-                lista.innerHTML += `<div class="recipe-item"><span onclick="apriDettaglio('${r.id}')" style="flex:1; cursor:pointer">${r.title}</span><div class="recipe-actions"><button class="btn-mini" onclick="preparaModifica('${r.id}')">✏️</button><button class="btn-mini" onclick="elimina('${r.id}')">🗑️</button></div></div>`;
+        function toggleOrderMode() {
+            isOrderMode = !isOrderMode;
+            const btn = document.getElementById('order-toggle');
+            btn.classList.toggle('active');
+            btn.innerText = isOrderMode ? "✅ Fine" : "⚙️ Ordina";
+            renderizzaCartelle();
+        }
+
+        function sposta(index, direzione) {
+            const nuovaPos = index + direzione;
+            if (nuovaPos < 0 || nuovaPos >= categorie.length) return;
+            const temp = categorie[index];
+            categorie[index] = categorie[nuovaPos];
+            categorie[nuovaPos] = temp;
+            localStorage.setItem('ordineCategorie', JSON.stringify(categorie));
+            renderizzaCartelle();
+        }
+
+        // --- Altre funzioni (Ricerca, CRUD) rimangono le stesse ---
+        function cercaRicette() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const resultsDiv = document.getElementById('search-results');
+            if(query.length < 2) { resultsDiv.style.display = 'none'; return; }
+            const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(query) || r.ing.toLowerCase().includes(query));
+            resultsDiv.innerHTML = filtrate.length > 0 ? "" : "<div class='search-result-item'>Nessun risultato</div>";
+            filtrate.forEach(r => {
+                const catInfo = categorie.find(c => c.id === r.categoria);
+                resultsDiv.innerHTML += `<div class="search-result-item" onclick="mostraDaRicerca('${r.id}')">${r.title} <span>${catInfo ? catInfo.nome : ''}</span></div>`;
             });
-            document.getElementById('folder-view').style.display = 'block';
+            resultsDiv.style.display = 'block';
         }
-
+        function mostraDaRicerca(id) { document.getElementById('search-input').value = ""; document.getElementById('search-results').style.display = 'none'; apriDettaglio(id); }
+        function apriCartella(cat) { document.getElementById('folder-title').innerText = cat; const lista = document.getElementById('lista-ricette-cartella'); lista.innerHTML = ""; tutteLeRicette.filter(r => r.categoria === cat).sort((a,b) => a.title.localeCompare(b.title)).forEach(r => { lista.innerHTML += `<div class="recipe-item"><span onclick="apriDettaglio('${r.id}')" style="flex:1; cursor:pointer">${r.title}</span><div class="recipe-actions"><button class="btn-mini" onclick="preparaModifica('${r.id}')">✏️</button><button class="btn-mini" onclick="elimina('${r.id}')">🗑️</button></div></div>`; }); document.getElementById('folder-view').style.display = 'block'; }
         function chiudiCartella() { document.getElementById('folder-view').style.display = 'none'; }
-
-        function apriDettaglio(id) {
-            const r = tutteLeRicette.find(x => x.id === id);
-            document.getElementById('det-title').innerText = r.title;
-            document.getElementById('det-ing').innerText = r.ing;
-            document.getElementById('det-proc').innerText = r.proc || "Nessun procedimento inserito.";
-            document.getElementById('btn-edit-det').onclick = () => preparaModifica(r.id);
-            document.getElementById('btn-del-det').onclick = () => elimina(r.id);
-            document.getElementById('detail-view').style.display = 'block';
-        }
-
+        function apriDettaglio(id) { const r = tutteLeRicette.find(x => x.id === id); document.getElementById('det-title').innerText = r.title; document.getElementById('det-ing').innerText = r.ing; document.getElementById('det-proc').innerText = r.proc || "Nessun procedimento."; document.getElementById('btn-edit-det').onclick = () => preparaModifica(r.id); document.getElementById('btn-del-det').onclick = () => elimina(r.id); document.getElementById('detail-view').style.display = 'block'; }
         function apriNuovo() { currentEditId = null; document.getElementById('form-label').innerText = "Nuova Ricetta"; document.getElementById('tit').value = ""; document.getElementById('ing').value = ""; document.getElementById('proc').value = ""; document.getElementById('form-view').style.display = 'block'; }
         function preparaModifica(id) { const r = tutteLeRicette.find(x => x.id === id); currentEditId = id; document.getElementById('tit').value = r.title; document.getElementById('categoria').value = r.categoria; document.getElementById('ing').value = r.ing; document.getElementById('proc').value = r.proc || ""; document.getElementById('form-label').innerText = "Modifica"; document.getElementById('detail-view').style.display = 'none'; document.getElementById('form-view').style.display = 'block'; }
         function chiudiForm() { document.getElementById('form-view').style.display = 'none'; }
-
-        function salva() {
-            const t = document.getElementById('tit').value.trim();
-            const c = document.getElementById('categoria').value;
-            const i = document.getElementById('ing').value.trim();
-            const p = document.getElementById('proc').value.trim();
-            if(!t) return alert("Inserisci un titolo!");
-            const data = { title: t, categoria: c, ing: i, proc: p };
-            if(currentEditId) db.ref('ricette/' + currentEditId).set(data).then(() => chiudiForm());
-            else db.ref('ricette').push(data).then(() => chiudiForm());
-        }
-
+        function salva() { const t = document.getElementById('tit').value.trim(); const c = document.getElementById('categoria').value; const i = document.getElementById('ing').value.trim(); const p = document.getElementById('proc').value.trim(); if(!t) return alert("Titolo!"); const data = { title: t, categoria: c, ing: i, proc: p }; if(currentEditId) db.ref('ricette/' + currentEditId).set(data).then(() => chiudiForm()); else db.ref('ricette').push(data).then(() => chiudiForm()); }
         function elimina(id) { if(confirm("Eliminare?")) db.ref('ricette/' + id).remove().then(() => document.getElementById('detail-view').style.display = 'none'); }
     </script>
 </body>
