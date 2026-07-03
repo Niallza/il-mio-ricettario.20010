@@ -1,1 +1,466 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- Meta tag per farla sembrare un'app nativa su iOS (iPhone) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ricettario Pro">
+    
+    <!-- Icona per la schermata Home di Apple (Usa un'icona standard se non ne hai una) -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3565/3565418.png">
 
+    <!-- Manifest incorporato per Android e Chrome -->
+    <link rel="manifest" href="data:application/json;base64,eyJkZWZhdWx0X2xvY2FsZSI6ICJpdCIsICJuYW1lIjogIlJpY2V0dGFyaW8gUHJvZmVzc2lvbmFsZSIsICJzaG9ydF9uYW1lIjogIlJpY2V0dGFyaW8iLCAic3RhcnRfdXJsIjogIi4iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiIzFjMWIxOSIsICJ0aGVtZV9jb2xvciI6ICIjYzk4YTNhIiwgImljb25zIjogW3sic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM1NjUvMzU2NTQxOC5wbmciLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=">
+    <meta name="theme-color" content="#1c1b19">
+
+    <!-- Font: Manrope per tutta l'interfaccia, IBM Plex Mono per quantità/etichette -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <title>Ricettario Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <style>
+        :root {
+            /* Base: grafite scuro moderno */
+            --bg: #1b1a18;
+            --surface: #242220;
+            --surface-2: #2e2b28;
+            --border: #38352f;
+            --text: #f0ece4;
+            --text-dim: #a89e8f;
+
+            /* Accenti funzionali */
+            --accent: #5cb37e;       /* verde erbetta — azione primaria */
+            --accent-light: #7fd39e;
+            --success: #5cb37e;
+            --danger: #d9695a;       /* pomodoro — elimina */
+            --ai: #8f7fd9;           /* indaco — funzioni AI */
+            --warning: #d9a24e;      /* ambra — banner offline */
+
+            --radius: 14px;
+            --font-display: 'Manrope', sans-serif;
+            --font-body: 'Manrope', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: var(--font-body); background: var(--bg); margin: 0; padding: 20px 15px 100px; color: var(--text); }
+
+        /* Ottimizzazione per la barra superiore di iPhone (SafeArea) */
+        .header-container { display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: env(safe-area-inset-top, 10px) auto 14px; gap: 8px; }
+        h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin: 0; border-left: 4px solid var(--accent); padding-left: 10px; }
+        .header-btns { display: flex; gap: 8px; }
+
+        .btn-order-toggle { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; font-family: var(--font-body); }
+        .btn-order-toggle.active { background: var(--accent); color: #1c1b19; border-color: var(--accent); }
+
+        /* Barra di Ricerca */
+        .search-container { max-width: 800px; margin: 10px auto 20px; position: relative; }
+        #search-input { width: 100%; padding: 13px 15px; border-radius: 12px; border: 1px solid var(--border); font-size: 16px; background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); box-sizing: border-box; outline: none; font-family: var(--font-body); }
+        #search-input::placeholder { color: var(--text-dim); }
+        #search-input:focus { border-color: var(--accent); }
+        #search-results { position: absolute; top: 54px; left: 0; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; z-index: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: none; max-height: 300px; overflow-y: auto; }
+        .search-result-item { padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; color: var(--text); }
+        .search-result-item span { color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+        /* Lista Cartelle — righe pulite in stile "foglio di lavoro" */
+        .folder-list { display: flex; flex-direction: column; gap: 8px; max-width: 600px; margin: 0 auto; }
+        .folder { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--riga-colore, var(--accent)); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.1s ease; }
+        .folder:active { transform: scale(0.985); }
+        .folder-icon { width: 38px; height: 38px; min-width: 38px; border-radius: 50%; background: var(--riga-tinta, rgba(255,255,255,0.08)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .folder-name { font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: 0.01em; flex: 1; }
+        .folder-count { font-family: var(--font-mono); font-weight: 600; font-size: 18px; color: var(--riga-colore, var(--accent)); }
+
+        /* Controlli Spostamento — sostituiscono il conteggio in modalità ordina */
+        .order-controls { display: none; gap: 4px; }
+        .order-controls.attivo { display: flex; }
+        .move-btn { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 6px 9px; cursor: pointer; font-size: 15px; }
+
+        /* Viste overlay */
+        #folder-view, #detail-view, #form-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 200; padding: calc(20px + env(safe-area-inset-top, 20px)) 15px 40px; box-sizing: border-box; overflow-y: auto; }
+        #folder-title { font-family: var(--font-display); letter-spacing: 0.05em; }
+        .recipe-item { background: var(--surface); border: 1px solid var(--border); padding: 15px; border-radius: var(--radius); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 500; box-shadow: 0 2px 6px rgba(0,0,0,0.2); max-width: 600px; margin-inline: auto; color: var(--text); }
+        .content-text { white-space: pre-wrap; line-height: 1.7; font-size: 17px; margin-top: 10px; display: block; color: var(--text); font-family: var(--font-body); }
+        #det-ing.content-text { font-family: var(--font-mono); font-size: 15px; }
+        .section-title { font-family: var(--font-mono); font-size: 12px; color: var(--accent-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 25px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; display: block; }
+        #det-title { font-family: var(--font-display); }
+
+        .fab { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 10px)); right: 20px; width: 65px; height: 65px; background: var(--accent); color: #1c1b19; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; z-index: 100; box-shadow: 0 8px 20px rgba(201,138,58,0.45); cursor: pointer; border: none; }
+        .fab-ai { right: 95px; background: var(--ai); color: white; width: 60px; height: 60px; font-size: 24px; box-shadow: 0 8px 20px rgba(138,90,158,0.4); }
+        .btn-mini { border: 1px solid var(--border); background: var(--surface-2); color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        input, textarea, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid var(--border); font-size: 16px; box-sizing: border-box; font-family: var(--font-body); background: var(--surface); color: var(--text); }
+        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        #ing, #det-ing { font-family: var(--font-mono); }
+        .btn-save { background: var(--success); color: #1c1b19; border: none; padding: 18px; border-radius: 15px; width: 100%; font-weight: 700; font-size: 17px; cursor: pointer; font-family: var(--font-display); letter-spacing: 0.03em; }
+        .btn-close { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; width: 100%; margin-bottom: 20px; font-weight: 600; cursor: pointer; font-family: var(--font-body); }
+        .ai-hint { background: rgba(138,90,158,0.18); color: #d9b8e8; border: 1px solid rgba(138,90,158,0.35); border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-bottom: 10px; line-height: 1.5; }
+
+        /* Banner stato connessione — stile "timbro" */
+        #offline-banner { display: none; position: fixed; top: 0; left: 0; width: 100%; background: var(--warning); color: #1c1b19; text-align: center; font-size: 13px; font-weight: 700; font-family: var(--font-mono); letter-spacing: 0.03em; padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 6px; z-index: 1000; box-sizing: border-box; }
+
+        /* Overlay di caricamento AI */
+        #ai-loading { display: none; position: fixed; inset: 0; background: rgba(10,9,8,0.85); z-index: 999; color: white; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; text-align: center; padding: 20px; box-sizing: border-box; }
+        .spinner { width: 48px; height: 48px; border: 5px solid rgba(255,255,255,0.2); border-top-color: var(--ai); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #ai-loading span { margin-top: 16px; font-weight: 600; font-family: var(--font-display); }
+        #ai-loading small { margin-top: 6px; opacity: 0.65; font-weight: 400; font-family: var(--font-mono); }
+    </style>
+
+</head>
+<body>
+
+    <div id="offline-banner">📴 Sei offline — vedi i dati salvati sul dispositivo. Le modifiche si sincronizzeranno da sole appena torna la connessione.</div>
+
+    <div id="main-content">
+        <div class="header-container">
+            <h1>Le Mie Ricette</h1>
+            <div class="header-btns">
+                <button class="btn-order-toggle" onclick="impostaApiKey()" title="Imposta API Key">🔑</button>
+                <button class="btn-order-toggle" id="order-toggle" onclick="toggleOrderMode()">⚙️ Ordina</button>
+            </div>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Cerca titolo o ingrediente..." oninput="cercaRicette()">
+            <div id="search-results"></div>
+        </div>
+
+        <div class="folder-list" id="griglia-cartelle"></div>
+    </div>
+
+    <!-- Input nascosto per fotocamera -->
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleFotoSelezionata(event)">
+
+    <button class="fab fab-ai" onclick="document.getElementById('camera-input').click()" title="Scansiona ricetta con AI">📷</button>
+    <button class="fab" onclick="apriNuovo()">+</button>
+
+    <!-- Overlay caricamento AI -->
+    <div id="ai-loading">
+        <div class="spinner"></div>
+        <span id="ai-loading-text">Sto leggendo la ricetta...</span>
+        <small>Analisi foto in corso</small>
+    </div>
+
+    <!-- Viste secondarie -->
+    <div id="folder-view"><div style="max-width:600px; margin:0 auto;"><button class="btn-close" onclick="chiudiCartella()">← Indietro</button><h2 id="folder-title" style="text-align:center; text-transform:uppercase;"></h2><div id="lista-ricette-cartella"></div></div></div>
+    
+    <div id="detail-view">
+        <div style="max-width:600px; margin:0 auto 20px; display:flex; justify-content:space-between;"><button class="btn-mini" onclick="document.getElementById('detail-view').style.display='none'">← Chiudi</button><div><button class="btn-mini" id="btn-edit-det">✏️</button><button class="btn-mini" id="btn-del-det" style="color:var(--danger)">🗑️</button></div></div>
+        <div class="detail-body"><h2 id="det-title" style="font-size:28px; margin:0;"></h2><span class="section-title">Ingredienti</span><span id="det-ing" class="content-text"></span><span class="section-title">Procedimento</span><span id="det-proc" class="content-text"></span></div>
+    </div>
+
+    <div id="form-view"><div style="max-width:600px; margin:0 auto;"><button class="btn-close" onclick="chiudiForm()">Annulla</button><h2 id="form-label" style="margin:0;">Nuova Ricetta</h2><div id="ai-review-hint" class="ai-hint" style="display:none;">🤖 Ricetta letta dalla foto. Controlla e correggi prima di salvare.</div><input type="text" id="tit" placeholder="Titolo"><select id="categoria"></select><textarea id="ing" rows="6" placeholder="Ingredienti..."></textarea><textarea id="proc" rows="10" placeholder="Procedimento..."></textarea><button class="btn-save" onclick="salva()">💾 SALVA</button></div></div>
+
+    <script>
+        // Registrazione del Service Worker reale (cache dell'app per funzionare offline).
+        // IMPORTANTE: il file sw.js deve trovarsi nella STESSA cartella di questo file, sullo stesso hosting.
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .catch(err => console.warn('Service worker non registrato (offline non disponibile):', err));
+        }
+
+        let defaultCategorie = [
+            { id: "Vorspeisen", nome: "KALT", icona: "🥗" },
+            { id: "Suppen", nome: "SUPPEN", icona: "🥣" },
+            { id: "Warme Vorspeisen", nome: "WARM", icona: "🥘" },
+            { id: "Hauptspeisen", nome: "HAUPT", icona: "🍝" },
+            { id: "Beilagen", nome: "BEILAGEN", icona: "🥦" },
+            { id: "Desserts", nome: "DESSERT", icona: "🍰" },
+            { id: "Sonstiges", nome: "ANDERE", icona: "📦" }
+        ];
+
+        let categorie = JSON.parse(localStorage.getItem('ordineCategorie')) || defaultCategorie;
+        let isOrderMode = false;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhp8YLfgCnD2PZ3AZ6oB2xb5dXJ19c-Fc",
+            authDomain: "ricettario-laboratorio-92621.firebaseapp.com",
+            databaseURL: "https://ricettario-laboratorio-92621-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ricettario-laboratorio-92621",
+            storageBucket: "ricettario-laboratorio-92621.firebasestorage.app",
+            messagingSenderId: "393684653408",
+            appId: "1:393684653408:web:4376ed5d6c76d0adcc3a05"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+        let tutteLeRicette = [];
+        let currentEditId = null;
+        const CACHE_KEY_RICETTE = 'cache_ricette_v1';
+
+        // 1) Mostra subito i dati salvati in locale (se offline o in attesa della connessione)
+        try {
+            const cache = localStorage.getItem(CACHE_KEY_RICETTE);
+            if (cache) {
+                tutteLeRicette = JSON.parse(cache);
+                renderizzaCartelle();
+            }
+        } catch (e) { /* cache non valida, ignora */ }
+
+        // 2) Banner di stato connessione (basato sulla connessione reale a Firebase)
+        let connessioneAttiva = true;
+        db.ref('.info/connected').on('value', snap => {
+            connessioneAttiva = snap.val() === true;
+            document.getElementById('offline-banner').style.display = connessioneAttiva ? 'none' : 'block';
+        });
+
+        // 3) Autenticazione anonima: necessaria perché le regole di sicurezza del database
+        //    richiedono un utente autenticato (anche anonimo) per leggere/scrivere.
+        //    Vedi le regole consigliate nel file firebase-rules.json incluso.
+        auth.signInAnonymously().catch(err => {
+            console.error('Accesso anonimo fallito:', err);
+            alert('Impossibile connettersi al database (' + err.message + '). Controlla la connessione o le impostazioni Firebase.');
+        });
+
+        auth.onAuthStateChanged(user => {
+            if (!user) return; // aspetta che l'accesso anonimo vada a buon fine
+            db.ref('ricette').on('value', s => {
+                const data = s.val();
+                tutteLeRicette = data ? Object.keys(data).map(id => ({...data[id], id})) : [];
+                renderizzaCartelle();
+                try { localStorage.setItem(CACHE_KEY_RICETTE, JSON.stringify(tutteLeRicette)); } catch (e) { /* storage pieno, ignora */ }
+            });
+        });
+
+        // Colori delle categorie nel nuovo tema (usati per il bordo e l'icona di ogni riga)
+        const coloriCategoria = {
+            "Vorspeisen": "#5cb37e",
+            "Suppen": "#d99a4e",
+            "Warme Vorspeisen": "#e0b24e",
+            "Hauptspeisen": "#d9695a",
+            "Beilagen": "#9aae5e",
+            "Desserts": "#b87bc4",
+            "Sonstiges": "#9c9488"
+        };
+        function tintaCategoria(hex, alpha) {
+            const n = parseInt(hex.slice(1), 16);
+            const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+            return `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        function renderizzaCartelle() {
+            const griglia = document.getElementById('griglia-cartelle');
+            const select = document.getElementById('categoria');
+            griglia.innerHTML = ""; select.innerHTML = "";
+            
+            categorie.forEach((cat, index) => {
+                const count = tutteLeRicette.filter(r => r.categoria === cat.id).length;
+                const colore = coloriCategoria[cat.id] || "#9c9488";
+
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'folder';
+                folderDiv.style.setProperty('--riga-colore', colore);
+                folderDiv.style.setProperty('--riga-tinta', tintaCategoria(colore, 0.15));
+                folderDiv.onclick = () => { if(!isOrderMode) apriCartella(cat.id); };
+                
+                folderDiv.innerHTML = `
+                    <span class="folder-icon">${cat.icona}</span>
+                    <span class="folder-name">${cat.nome}</span>
+                    <div class="order-controls ${isOrderMode ? 'attivo' : ''}">
+                        <button class="move-btn" onclick="event.stopPropagation(); sposta(${index}, -1)">↑</button>
+                        <button class="move-btn" onclick="event.stopPropagation(); sposta(${index}, 1)">↓</button>
+                    </div>
+                    ${isOrderMode ? '' : `<span class="folder-count">${count}</span>`}
+                `;
+                
+                griglia.appendChild(folderDiv);
+                select.innerHTML += `<option value="${cat.id}">${cat.icona} ${cat.nome}</option>`;
+            });
+        }
+
+        function toggleOrderMode() {
+            isOrderMode = !isOrderMode;
+            const btn = document.getElementById('order-toggle');
+            btn.classList.toggle('active');
+            btn.innerText = isOrderMode ? "✅ Fine" : "⚙️ Ordina";
+            renderizzaCartelle();
+        }
+
+        function sposta(index, direzione) {
+            const nuovaPos = index + direzione;
+            if (nuovaPos < 0 || nuovaPos >= categorie.length) return;
+            const temp = categorie[index];
+            categorie[index] = categorie[nuovaPos];
+            categorie[nuovaPos] = temp;
+            localStorage.setItem('ordineCategorie', JSON.stringify(categorie));
+            renderizzaCartelle();
+        }
+
+        function cercaRicette() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const resultsDiv = document.getElementById('search-results');
+            if(query.length < 2) { resultsDiv.style.display = 'none'; return; }
+            const filtrate = tutteLeRicette.filter(r => r.title.toLowerCase().includes(query) || r.ing.toLowerCase().includes(query));
+            resultsDiv.innerHTML = filtrate.length > 0 ? "" : "<div class='search-result-item'>Nessun risultato</div>";
+            filtrate.forEach(r => {
+                const catInfo = categorie.find(c => c.id === r.categoria);
+                resultsDiv.innerHTML += `<div class="search-result-item" onclick="mostraDaRicerca('${r.id}')">${r.title} <span>${catInfo ? catInfo.nome : ''}</span></div>`;
+            });
+            resultsDiv.style.display = 'block';
+        }
+        
+        function mostraDaRicerca(id) { document.getElementById('search-input').value = ""; document.getElementById('search-results').style.display = 'none'; apriDettaglio(id); }
+        function apriCartella(cat) { document.getElementById('folder-title').innerText = cat; const lista = document.getElementById('lista-ricette-cartella'); lista.innerHTML = ""; tutteLeRicette.filter(r => r.categoria === cat).sort((a,b) => a.title.localeCompare(b.title)).forEach(r => { lista.innerHTML += `<div class="recipe-item"><span onclick="apriDettaglio('${r.id}')" style="flex:1; cursor:pointer">${r.title}</span><div class="recipe-actions"><button class="btn-mini" onclick="preparaModifica('${r.id}')">✏️</button><button class="btn-mini" onclick="elimina('${r.id}')">🗑️</button></div></div>`; }); document.getElementById('folder-view').style.display = 'block'; }
+        function chiudiCartella() { document.getElementById('folder-view').style.display = 'none'; }
+        function apriDettaglio(id) { const r = tutteLeRicette.find(x => x.id === id); document.getElementById('det-title').innerText = r.title; document.getElementById('det-ing').innerText = r.ing; document.getElementById('det-proc').innerText = r.proc || "Nessun procedimento."; document.getElementById('btn-edit-det').onclick = () => preparaModifica(r.id); document.getElementById('btn-del-det').onclick = () => elimina(r.id); document.getElementById('detail-view').style.display = 'block'; }
+        function apriNuovo() { currentEditId = null; document.getElementById('form-label').innerText = "Nuova Ricetta"; document.getElementById('ai-review-hint').style.display = 'none'; document.getElementById('tit').value = ""; document.getElementById('ing').value = ""; document.getElementById('proc').value = ""; document.getElementById('form-view').style.display = 'block'; }
+        function preparaModifica(id) { const r = tutteLeRicette.find(x => x.id === id); currentEditId = id; document.getElementById('ai-review-hint').style.display = 'none'; document.getElementById('tit').value = r.title; document.getElementById('categoria').value = r.categoria; document.getElementById('ing').value = r.ing; document.getElementById('proc').value = r.proc || ""; document.getElementById('form-label').innerText = "Modifica"; document.getElementById('detail-view').style.display = 'none'; document.getElementById('form-view').style.display = 'block'; }
+        function chiudiForm() { document.getElementById('form-view').style.display = 'none'; }
+        function salva() {
+            const t = document.getElementById('tit').value.trim();
+            const c = document.getElementById('categoria').value;
+            const i = document.getElementById('ing').value.trim();
+            const p = document.getElementById('proc').value.trim();
+            if (!t) return alert("Titolo!");
+            const data = { title: t, categoria: c, ing: i, proc: p };
+            const operazione = currentEditId ? db.ref('ricette/' + currentEditId).set(data) : db.ref('ricette').push(data);
+            if (!connessioneAttiva) {
+                // Offline: la scrittura resta in coda nell'SDK e parte da sola alla riconnessione
+                // (a patto di non chiudere la scheda/app prima di essere tornati online).
+                alert("Sei offline. La ricetta verrà salvata automaticamente appena torna la connessione — tieni l'app aperta.");
+            }
+            operazione.then(() => chiudiForm()).catch(err => alert("Errore nel salvataggio: " + err.message));
+        }
+        function elimina(id) {
+            if (!confirm("Eliminare?")) return;
+            if (!connessioneAttiva && !confirm("Sei offline: l'eliminazione verrà completata quando torna la connessione. Continuare?")) return;
+            db.ref('ricette/' + id).remove()
+                .then(() => document.getElementById('detail-view').style.display = 'none')
+                .catch(err => alert("Errore nell'eliminazione: " + err.message));
+        }
+
+        // =====================================================
+        //  SCANSIONE RICETTA CON AI (foto -> testo automatico)
+        // =====================================================
+
+        function impostaApiKey() {
+            const attuale = localStorage.getItem('anthropicApiKey') || '';
+            const chiave = prompt(
+                "Incolla qui la tua Anthropic API Key (inizia con 'sk-ant-...').\n\n" +
+                "Viene salvata solo su questo dispositivo/browser, nella memoria locale.\n" +
+                "Serve per far leggere le ricette dalle foto tramite AI.",
+                attuale
+            );
+            if (chiave !== null) {
+                localStorage.setItem('anthropicApiKey', chiave.trim());
+                if (chiave.trim()) alert("✅ Chiave salvata su questo dispositivo.");
+            }
+        }
+
+        function mostraCaricamentoAI(visibile, testo) {
+            const overlay = document.getElementById('ai-loading');
+            if (testo) document.getElementById('ai-loading-text').innerText = testo;
+            overlay.style.display = visibile ? 'flex' : 'none';
+        }
+
+        // Ridimensiona la foto (max 1400px lato lungo) e la converte in JPEG base64,
+        // per rendere l'invio più veloce e più economico.
+        function ridimensionaEConverti(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error("Impossibile leggere il file"));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error("Immagine non valida"));
+                    img.onload = () => {
+                        const maxLato = 1400;
+                        let { width, height } = img;
+                        if (width > maxLato || height > maxLato) {
+                            const scala = maxLato / Math.max(width, height);
+                            width = Math.round(width * scala);
+                            height = Math.round(height * scala);
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        resolve(dataUrl.split(',')[1]);
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        const CATEGORIE_VALIDE = defaultCategorie.map(c => c.id);
+
+        const PROMPT_ESTRAZIONE = `Analizza la foto di questa ricetta (può essere scritta a mano o stampata, in italiano o tedesco).
+Estrai le informazioni e rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo e senza backtick markdown, con questa struttura esatta:
+{"title": "Titolo della ricetta", "categoria": "una tra: ${CATEGORIE_VALIDE.join(', ')}", "ing": "elenco ingredienti, uno per riga, con le quantità", "proc": "procedimento passo per passo"}
+Scegli la categoria più adatta tra quelle indicate. Se un campo non è leggibile, lascialo vuoto ma mantieni la struttura JSON.`;
+
+        async function handleFotoSelezionata(event) {
+            const file = event.target.files[0];
+            event.target.value = ""; // permette di riselezionare la stessa foto in seguito
+            if (!file) return;
+
+            const apiKey = localStorage.getItem('anthropicApiKey');
+            if (!apiKey) {
+                alert("Prima imposta la tua API Key Anthropic (tocca l'icona 🔑 in alto).");
+                return;
+            }
+
+            mostraCaricamentoAI(true, "Sto leggendo la ricetta...");
+            try {
+                const base64 = await ridimensionaEConverti(file);
+
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-api-key": apiKey,
+                        "anthropic-version": "2023-06-01",
+                        "anthropic-dangerous-direct-browser-access": "true"
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-6",
+                        max_tokens: 1500,
+                        messages: [{
+                            role: "user",
+                            content: [
+                                { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
+                                { type: "text", text: PROMPT_ESTRAZIONE }
+                            ]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message || "Errore API");
+
+                let testo = (data.content || []).map(b => b.text || "").join("").trim();
+                testo = testo.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
+
+                let ricetta;
+                try {
+                    ricetta = JSON.parse(testo);
+                } catch (e) {
+                    throw new Error("La risposta dell'AI non era in formato valido. Riprova con una foto più nitida.");
+                }
+
+                currentEditId = null;
+                document.getElementById('form-label').innerText = "Rivedi Ricetta (AI)";
+                document.getElementById('ai-review-hint').style.display = 'block';
+                document.getElementById('tit').value = ricetta.title || "";
+                document.getElementById('categoria').value = CATEGORIE_VALIDE.includes(ricetta.categoria) ? ricetta.categoria : "Sonstiges";
+                document.getElementById('ing').value = ricetta.ing || "";
+                document.getElementById('proc').value = ricetta.proc || "";
+                document.getElementById('form-view').style.display = 'block';
+
+            } catch (err) {
+                alert("Errore durante la lettura AI: " + err.message);
+            } finally {
+                mostraCaricamentoAI(false);
+            }
+        }
+    </script>
+</body>
+</html>
